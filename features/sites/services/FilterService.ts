@@ -2,19 +2,19 @@
  * Filter Service Implementation
  */
 
-import { SiteWithStatus } from '@/lib/contracts/types/site';
+import { Site } from '@/lib/contracts/types/site';
 import { FilterOptions, SortOrder } from '@/lib/contracts/types/filter';
 import { IFilterService } from '@/lib/contracts/interfaces/filter-service';
 
 class FilterService implements IFilterService {
   filterSites(
-    sites: SiteWithStatus[],
+    sites: Site[],
     filters: FilterOptions,
     userPreferences: {
       favoriteSites: string[];
       hiddenSites: string[];
     }
-  ): SiteWithStatus[] {
+  ): Site[] {
     let filtered = [...sites];
 
     // 筛选：隐藏的站点
@@ -36,11 +36,6 @@ class FilterService implements IFilterService {
       filtered = filtered.filter((site) =>
         filters.tags!.some((tagId) => site.tags.includes(tagId))
       );
-    }
-
-    // 筛选：按状态
-    if (filters.status && filters.status !== 'all') {
-      filtered = filtered.filter((site) => site.status === filters.status);
     }
 
     // 筛选：按登记等级
@@ -82,10 +77,10 @@ class FilterService implements IFilterService {
   }
 
   sortSites(
-    sites: SiteWithStatus[],
+    sites: Site[],
     order: SortOrder,
     favoriteSites: string[]
-  ): SiteWithStatus[] {
+  ): Site[] {
     const sorted = [...sites];
 
     switch (order) {

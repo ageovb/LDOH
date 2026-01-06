@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { SiteWithStatus } from "@/lib/contracts/types/site";
+import { Site } from "@/lib/contracts/types/site";
 import { Tag } from "@/lib/contracts/types/tag";
 import { FilterOptions } from "@/lib/contracts/types/filter";
 import { userPreferenceService } from "@/features/sites/services/UserPreferenceService";
@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 interface SiteHubPageProps {
-  initialSites: SiteWithStatus[];
+  initialSites: Site[];
   tags: Tag[];
   dataWarning?: string;
 }
@@ -31,7 +31,7 @@ export function SiteHubPage({
   tags,
   dataWarning,
 }: SiteHubPageProps) {
-  const [sites, setSites] = useState<SiteWithStatus[]>(initialSites);
+  const [sites, setSites] = useState<Site[]>(initialSites);
   const [tagOptions, setTagOptions] = useState<Tag[]>(tags);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -47,7 +47,7 @@ export function SiteHubPage({
   const [currentUser, setCurrentUser] = useState<LdUser | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"create" | "edit">("create");
-  const [editingSite, setEditingSite] = useState<SiteWithStatus | null>(null);
+  const [editingSite, setEditingSite] = useState<Site | null>(null);
 
   // 仅在客户端读取本地偏好
   useEffect(() => {
@@ -76,7 +76,7 @@ export function SiteHubPage({
   const canManageSites = (currentUser?.trust_level ?? 0) >= 2;
   const normalizedUsername = currentUser?.username?.toLowerCase() || "";
   const isDevUser = normalizedUsername === "dev";
-  const isSiteMaintainer = (site: SiteWithStatus) =>
+  const isSiteMaintainer = (site: Site) =>
     isDevUser ||
     (normalizedUsername
       ? site.maintainers.some(
@@ -145,7 +145,7 @@ export function SiteHubPage({
     setEditorOpen(true);
   };
 
-  const handleOpenEdit = (site: SiteWithStatus) => {
+  const handleOpenEdit = (site: Site) => {
     setEditorMode("edit");
     setEditingSite(site);
     setEditorOpen(true);

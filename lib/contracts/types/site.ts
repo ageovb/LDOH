@@ -69,16 +69,3 @@ export interface Site {
   /** 更新时间 (可选) */
   updatedAt?: string;
 }
-
-/**
- * 站点状态枚举
- */
-export type SiteStatus = 'available' | 'unavailable' | 'unknown';
-
-/**
- * 带状态的站点信息
- */
-export interface SiteWithStatus extends Site {
-  /** 站点当前状态（由状态检测 API 返回） */
-  status: SiteStatus;
-}

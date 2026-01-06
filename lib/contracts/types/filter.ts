@@ -14,8 +14,6 @@ export interface FilterOptions {
   registrationLimit?: number | 'all';
   /** 按特性筛选 */
   feature?: 'all' | 'ldc' | 'translation' | 'checkin';
-  /** 按当前状态筛选 */
-  status?: 'available' | 'unavailable' | 'unknown' | 'all';
   /** 关键词搜索（站点名称） */
   searchKeyword?: string;
   /** 仅显示收藏的站点 */
@@ -28,13 +26,3 @@ export interface FilterOptions {
  * 排序规则
  */
 export type SortOrder = 'smart' | 'name-asc' | 'name-desc';
-
-/**
- * 智能排序优先级
- * - 可用站点优先
- * - 收藏站点优先
- */
-export interface SmartSortPriority {
-  isFavorite: boolean;
-  isAvailable: boolean;
-}

@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SiteHubPage } from "@/features/sites/components/SiteHubPage";
-import { Site, SiteWithStatus } from "@/lib/contracts/types/site";
+import { Site } from "@/lib/contracts/types/site";
 import { Tag } from "@/lib/contracts/types/tag";
 import {
   getOAuthTokenFromCookies,
@@ -38,11 +38,7 @@ export default async function HomePage() {
   const sitesResult = (payload?.sites ?? []) as Site[];
   const tagsResult = (payload?.tags ?? []) as Tag[];
 
-  const sites: SiteWithStatus[] =
-    sitesResult.map((site) => ({
-      ...site,
-      status: "available" as const,
-    })) ?? [];
+  const sites = sitesResult ?? [];
 
   const dataWarning = response.ok
     ? undefined

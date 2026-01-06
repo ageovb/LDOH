@@ -4,7 +4,7 @@
  * 基于 PRD 第 3.1 节：筛选和搜索功能
  */
 
-import { SiteWithStatus } from '../types/site';
+import { Site } from '../types/site';
 import { FilterOptions, SortOrder } from '../types/filter';
 
 /**
@@ -13,19 +13,19 @@ import { FilterOptions, SortOrder } from '../types/filter';
 export interface IFilterService {
   /**
    * 根据筛选条件过滤站点列表
-   * @param sites - 站点列表（带状态）
+   * @param sites - 站点列表
    * @param filters - 筛选条件
    * @param userPreferences - 用户偏好（用于判断收藏/隐藏）
    * @returns 过滤后的站点列表
    */
   filterSites(
-    sites: SiteWithStatus[],
+    sites: Site[],
     filters: FilterOptions,
     userPreferences: {
       favoriteSites: string[];
       hiddenSites: string[];
     }
-  ): SiteWithStatus[];
+  ): Site[];
 
   /**
    * 对站点列表进行排序
@@ -35,8 +35,8 @@ export interface IFilterService {
    * @returns 排序后的站点列表
    */
   sortSites(
-    sites: SiteWithStatus[],
+    sites: Site[],
     order: SortOrder,
     favoriteSites: string[]
-  ): SiteWithStatus[];
+  ): Site[];
 }

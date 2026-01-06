@@ -4,7 +4,7 @@
 
 "use client";
 
-import { SiteWithStatus } from "@/lib/contracts/types/site";
+import { Site } from "@/lib/contracts/types/site";
 import React, {
   useEffect,
   useLayoutEffect,
@@ -45,11 +45,11 @@ import {
 } from "lucide-react";
 
 interface SiteCardProps {
-  site: SiteWithStatus;
+  site: Site;
   isFavorite: boolean;
   isHidden: boolean;
   canEdit: boolean;
-  onEdit: (site: SiteWithStatus) => void;
+  onEdit: (site: Site) => void;
   onToggleFavorite: (id: string) => void;
   onToggleHidden: (id: string) => void;
 }
