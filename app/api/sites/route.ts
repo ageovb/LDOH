@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db/supabaseAdmin";
 import { fetchLdUser } from "@/lib/auth/ld-user";
-import { getOAuthTokenFromCookies, getSessionSecret } from "@/lib/auth/ld-oauth";
+import { getSessionIdFromCookies } from "@/lib/auth/ld-oauth";
 import { buildTagOptionsFromSites, loadSitesData } from "@/lib/server/siteData";
+import { getSession } from "@/lib/auth/session-store";
 
 type MaintainerPayload = {
   name: string;
@@ -45,12 +46,17 @@ function normalizeList<T>(value: unknown): T[] {
 export async function POST(request: NextRequest) {
   try {
     if (process.env.ENV !== "dev") {
-      const token = getOAuthTokenFromCookies(request.cookies, getSessionSecret());
-      if (!token) {
+      const sessionId = getSessionIdFromCookies(request.cookies);
+      if (!sessionId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const user = await fetchLdUser(token.accessToken);
+      const session = await getSession(sessionId);
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const user = await fetchLdUser(session.accessToken);
       if (user.trust_level < 2) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -176,12 +182,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ sites, tags });
     }
 
-    const token = getOAuthTokenFromCookies(request.cookies, getSessionSecret());
-    if (!token) {
+    const sessionId = getSessionIdFromCookies(request.cookies);
+    if (!sessionId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await fetchLdUser(token.accessToken);
+    const session = await getSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await fetchLdUser(session.accessToken);
     const sites = await loadSitesData({
       username: user.username,
       maxRegistrationLimit: user.trust_level,

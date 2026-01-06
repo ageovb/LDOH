@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db/supabaseAdmin";
 import { fetchLdUser } from "@/lib/auth/ld-user";
-import { getOAuthTokenFromCookies, getSessionSecret } from "@/lib/auth/ld-oauth";
+import { getSessionIdFromCookies } from "@/lib/auth/ld-oauth";
+import { getSession } from "@/lib/auth/session-store";
 
 type MaintainerPayload = {
   name: string;
@@ -48,12 +49,17 @@ export async function PATCH(
   try {
     let username = "";
     if (process.env.ENV !== "dev") {
-      const token = getOAuthTokenFromCookies(request.cookies, getSessionSecret());
-      if (!token) {
+      const sessionId = getSessionIdFromCookies(request.cookies);
+      if (!sessionId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const user = await fetchLdUser(token.accessToken);
+      const session = await getSession(sessionId);
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const user = await fetchLdUser(session.accessToken);
       if (user.trust_level < 2) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }

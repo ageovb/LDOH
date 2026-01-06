@@ -1,31 +1,13 @@
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SiteHubPage } from "@/features/sites/components/SiteHubPage";
 import { Site } from "@/lib/contracts/types/site";
 import { Tag } from "@/lib/contracts/types/tag";
-import {
-  getOAuthTokenFromCookies,
-  getSessionSecret,
-  isAuthRequired,
-  shouldRefreshToken,
-} from "@/lib/auth/ld-oauth";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const headerList = await headers();
-  if (isAuthRequired()) {
-    const secret = getSessionSecret();
-    const cookieStore = await cookies();
-    const token = getOAuthTokenFromCookies(cookieStore, secret);
-    if (!token) {
-      redirect("/auth/login?returnTo=/");
-    }
-    if (shouldRefreshToken(token)) {
-      redirect("/api/oauth/refresh?redirect=/");
-    }
-  }
-
   const host = headerList.get("x-forwarded-host") || headerList.get("host");
   const protocol = headerList.get("x-forwarded-proto") || "http";
   const baseUrl = host ? `${protocol}://${host}` : "";

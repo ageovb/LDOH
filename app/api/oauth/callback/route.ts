@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  createSignedCookieValue,
   getOAuthConfig,
   getOAuthStateFromCookies,
   getSessionSecret,
+  getSessionCookieMaxAge,
+  getSessionCookieName,
   getStateCookieMaxAge,
   getStateCookieName,
-  getTokenCookieMaxAge,
-  getTokenCookieName,
   normalizeReturnTo,
 } from "@/lib/auth/ld-oauth";
+import { createSession } from "@/lib/auth/session-store";
 
 type TokenResponse = {
   access_token: string;
@@ -73,32 +73,51 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (!tokenData.refresh_token) {
+    return NextResponse.json(
+      { error: "Token exchange returned no refresh token" },
+      { status: 502 }
+    );
+  }
+
   const expiresIn = tokenData.expires_in ?? 3600;
-  const expiresAt = Math.floor(Date.now() / 1000) + expiresIn;
-  const tokenPayload = {
+  const accessExpiresAt = new Date(Date.now() + expiresIn * 1000);
+  const sessionExpiresAt = new Date(
+    Date.now() + getSessionCookieMaxAge() * 1000
+  );
+  const session = await createSession({
     accessToken: tokenData.access_token,
     refreshToken: tokenData.refresh_token,
-    expiresAt,
     tokenType: tokenData.token_type || "bearer",
-  };
-
-  const tokenCookieValue = createSignedCookieValue(tokenPayload, secret);
+    accessExpiresAt,
+    sessionExpiresAt,
+  });
   const response = NextResponse.redirect(
     new URL(normalizeReturnTo(statePayload.returnTo), request.url)
   );
 
   response.cookies.set({
-    name: getTokenCookieName(),
-    value: tokenCookieValue,
+    name: getSessionCookieName(),
+    value: session.id,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: getTokenCookieMaxAge(),
+    maxAge: getSessionCookieMaxAge(),
   });
 
   response.cookies.set({
     name: getStateCookieName(),
+    value: "",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+
+  response.cookies.set({
+    name: "ld_oauth_token",
     value: "",
     httpOnly: true,
     sameSite: "lax",

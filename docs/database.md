@@ -95,3 +95,23 @@
 索引：
 - site_extension_links_pkey (UNIQUE)
 - site_extension_links_site_id_idx
+
+## 表：auth_sessions
+
+| 字段 | 类型 | 可空 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| id | uuid | 否 | gen_random_uuid() | 会话 ID（写入 httpOnly cookie） |
+| access_token | text | 否 | - | 访问令牌（短期） |
+| refresh_token | text | 否 | - | 刷新令牌（长期，仅服务端保存） |
+| token_type | text | 否 | bearer | 令牌类型 |
+| access_expires_at | timestamptz | 否 | - | access_token 过期时间 |
+| session_expires_at | timestamptz | 否 | - | 会话过期时间（对齐 cookie Max-Age） |
+| created_at | timestamptz | 否 | now() | 创建时间 |
+| updated_at | timestamptz | 否 | now() | 更新时间 |
+
+约束：
+- PRIMARY KEY(id)
+
+索引：
+- auth_sessions_pkey (UNIQUE)
+- auth_sessions_session_expires_at_idx

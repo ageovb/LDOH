@@ -9,6 +9,7 @@ LDOH（Linux Do Open Hub）是一个开发信息导航平台。
 - 关键词搜索 + 标签/等级/特性筛选
 - 站点新增 / 编辑（LD OAuth，LV2 及以上）
 - 站长可隐藏自己的站点（仅本人可见）
+- 根据等级显示站点
 
 ## 技术栈
 
@@ -41,7 +42,7 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 LD_OAUTH_CLIENT_ID=
 LD_OAUTH_CLIENT_SECRET=
-LD_OAUTH_REDIRECT_URI=
+LD_OAUTH_REDIRECT_URI=            # 形如 https://your-domain.com/api/oauth/callback
 SESSION_SECRET=
 ```
 
@@ -49,11 +50,13 @@ SESSION_SECRET=
 
 ```
 ENV=dev                           # dev 模式，跳过 OAuth，返回 mock 用户
+LD_DEV_USERNAME=dev               # dev 模式 mock 用户名
+LD_DEV_TRUST_LEVEL=2              # dev 模式 mock trust_level
 LD_OAUTH_AUTHORIZATION_ENDPOINT=  # 默认 https://connect.linux.do/oauth2/authorize
 LD_OAUTH_TOKEN_ENDPOINT=          # 默认 https://connect.linux.do/oauth2/token
 LD_OAUTH_USER_ENDPOINT=           # 默认 https://connect.linux.do/api/user
 LD_OAUTH_REFRESH_BUFFER_SECONDS=120
-LD_OAUTH_TOKEN_COOKIE_MAX_AGE=2592000
+LD_OAUTH_TOKEN_COOKIE_MAX_AGE=2592000 # 会话有效期（秒），默认 30 天
 ```
 
 ## 项目结构（简化）
@@ -72,6 +75,7 @@ lib/contracts/           # 类型定义
 
 - 数据结构说明：`docs/database.md`
 - 迁移与数据清单：`docs/migrations.md`
+  - OAuth 会话表：`auth_sessions`（refresh_token 仅服务端存储）
 
 ## API（内部）
 

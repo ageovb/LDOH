@@ -4,13 +4,6 @@ type CookieStore = {
   get: (name: string) => { value: string } | undefined;
 };
 
-export type OAuthTokenPayload = {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt: number;
-  tokenType: string;
-};
-
 export type OAuthStatePayload = {
   state: string;
   createdAt: number;
@@ -21,7 +14,7 @@ const DEFAULT_AUTH_ENDPOINT = "https://connect.linux.do/oauth2/authorize";
 const DEFAULT_TOKEN_ENDPOINT = "https://connect.linux.do/oauth2/token";
 
 const STATE_COOKIE_NAME = "ld_oauth_state";
-const TOKEN_COOKIE_NAME = "ld_oauth_token";
+const SESSION_COOKIE_NAME = "ld_auth_session";
 
 const DEFAULT_STATE_TTL_SECONDS = 60 * 10;
 const DEFAULT_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -46,8 +39,8 @@ export function getStateCookieName() {
   return STATE_COOKIE_NAME;
 }
 
-export function getTokenCookieName() {
-  return TOKEN_COOKIE_NAME;
+export function getSessionCookieName() {
+  return SESSION_COOKIE_NAME;
 }
 
 export function normalizeReturnTo(value?: string | null) {
@@ -92,12 +85,8 @@ export function getOAuthStateFromCookies(cookies: CookieStore, secret: string) {
   return getSignedCookieValue<OAuthStatePayload>(cookieValue, secret);
 }
 
-export function getOAuthTokenFromCookies(cookies: CookieStore, secret: string) {
-  const cookieValue = cookies.get(TOKEN_COOKIE_NAME)?.value;
-  if (!cookieValue) {
-    return null;
-  }
-  return getSignedCookieValue<OAuthTokenPayload>(cookieValue, secret);
+export function getSessionIdFromCookies(cookies: CookieStore) {
+  return cookies.get(SESSION_COOKIE_NAME)?.value || "";
 }
 
 export function buildAuthorizeUrl(options: {
@@ -126,17 +115,16 @@ export function getTokenCookieMaxAge() {
   return DEFAULT_TOKEN_MAX_AGE_SECONDS;
 }
 
+export function getSessionCookieMaxAge() {
+  return getTokenCookieMaxAge();
+}
+
 export function getRefreshBufferSeconds() {
   const configured = Number(process.env.LD_OAUTH_REFRESH_BUFFER_SECONDS);
   if (Number.isFinite(configured) && configured >= 0) {
     return configured;
   }
   return DEFAULT_REFRESH_BUFFER_SECONDS;
-}
-
-export function shouldRefreshToken(token: OAuthTokenPayload) {
-  const now = Math.floor(Date.now() / 1000);
-  return token.expiresAt <= now + getRefreshBufferSeconds();
 }
 
 export function getSessionSecret() {
