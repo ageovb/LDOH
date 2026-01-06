@@ -1,0 +1,93 @@
+# LDOH
+
+LDOH（Linux Do Open Hub）是一个开发信息导航平台。
+
+## 功能概览
+
+- 站点列表与卡片展示
+- 收藏 / 隐藏（本地存储）
+- 关键词搜索 + 标签/等级/特性筛选
+- 站点新增 / 编辑（LD OAuth，LV2 及以上）
+- 站长可隐藏自己的站点（仅本人可见）
+
+## 技术栈
+
+- Next.js 15（App Router）
+- TypeScript
+- Tailwind CSS
+- Supabase
+- LD OAuth
+
+## 快速开始
+
+```bash
+npm install
+npm run dev
+```
+
+构建/启动：
+
+```bash
+npm run build
+npm start
+```
+
+## 环境变量
+
+必须：
+
+```
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+LD_OAUTH_CLIENT_ID=
+LD_OAUTH_CLIENT_SECRET=
+LD_OAUTH_REDIRECT_URI=
+SESSION_SECRET=
+```
+
+可选：
+
+```
+ENV=dev                           # dev 模式，跳过 OAuth，返回 mock 用户
+LD_OAUTH_AUTHORIZATION_ENDPOINT=  # 默认 https://connect.linux.do/oauth2/authorize
+LD_OAUTH_TOKEN_ENDPOINT=          # 默认 https://connect.linux.do/oauth2/token
+LD_OAUTH_USER_ENDPOINT=           # 默认 https://connect.linux.do/api/user
+LD_OAUTH_REFRESH_BUFFER_SECONDS=120
+LD_OAUTH_TOKEN_COOKIE_MAX_AGE=2592000
+```
+
+## 项目结构（简化）
+
+```
+app/                     # 路由与 API
+components/              # 通用 UI（无业务）
+features/sites/          # 站点模块（组件 + 服务）
+lib/auth/                # LD OAuth
+lib/db/                  # Supabase admin client
+lib/server/              # 纯服务端数据层
+lib/contracts/           # 类型定义
+```
+
+## 数据与迁移
+
+- 数据结构说明：`docs/database.md`
+- 迁移与数据清单：`docs/migrations.md`
+
+## API（内部）
+
+- `GET /api/sites`：拉取站点与推荐标签
+- `POST /api/sites`：新增站点（LV2）
+- `PATCH /api/sites/[id]`：编辑站点（LV2）
+- `GET /api/ld/user`：当前用户信息（用于权限判断）
+
+## 标签策略
+
+- tag 仅为字符串（无 id/name 区分）
+- 推荐标签默认包含：Claude Code / Codex / Gemini CLI
+- 推荐标签与站点已有 tag 去重合并
+
+## 维护者规则
+
+- 输入 LinuxDo 个人主页链接：`https://linux.do/u/xxx/summary`
+- 自动解析 `xxx` 作为显示名（若为空）与站长识别依据
+- profile_url 为空则不显示

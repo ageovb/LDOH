@@ -1,0 +1,709 @@
+/**
+ * Site Card Component - Enhanced with shadcn/ui + Framer Motion
+ */
+
+"use client";
+
+import { SiteWithStatus } from "@/lib/contracts/types/site";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { motion } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Star,
+  EyeOff,
+  Copy,
+  Check,
+  Gift,
+  Languages,
+  CalendarCheck,
+  MoreHorizontal,
+  Activity,
+  CreditCard,
+  Pencil,
+} from "lucide-react";
+
+interface SiteCardProps {
+  site: SiteWithStatus;
+  isFavorite: boolean;
+  isHidden: boolean;
+  canEdit: boolean;
+  onEdit: (site: SiteWithStatus) => void;
+  onToggleFavorite: (id: string) => void;
+  onToggleHidden: (id: string) => void;
+}
+
+export function SiteCard({
+  site,
+  isFavorite,
+  isHidden,
+  canEdit,
+  onEdit,
+  onToggleFavorite,
+  onToggleHidden,
+}: SiteCardProps) {
+  const [copied, setCopied] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [maintainerMenuOpen, setMaintainerMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const primaryMaintainer = site.maintainers?.[0];
+  const maintainerLinks = (site.maintainers ?? [])
+    .filter((maintainer) => Boolean(maintainer.profileUrl))
+    .map((maintainer) => ({
+      name: maintainer.name,
+      url: maintainer.profileUrl as string,
+    }));
+  const hasMultipleMaintainers = maintainerLinks.length > 1;
+  const primaryMaintainerUrl = maintainerLinks[0]?.url ?? "";
+  const maintainerLabel = primaryMaintainer?.name || "站长";
+  const visualLength = Array.from(maintainerLabel).reduce((acc, ch) => {
+    const isAscii = ch.charCodeAt(0) <= 0x7f;
+    return acc + (isAscii ? 0.6 : 1);
+  }, 0);
+  const maintainerTextClass =
+    visualLength <= 2.4
+      ? "text-[12px]"
+      : visualLength <= 3.6
+      ? "text-[11px]"
+      : visualLength <= 5
+      ? "text-[10px]"
+      : visualLength <= 6.2
+      ? "text-[9px]"
+      : "text-[8px]";
+  const supportsTranslation = site.supportsImmersiveTranslation;
+  const rateLimitLabel = site.rateLimit ? site.rateLimit : "UNKNOWN";
+  const formattedUpdatedAt = (() => {
+    if (!site.updatedAt) return "未知";
+    const date = new Date(site.updatedAt);
+    if (Number.isNaN(date.getTime())) return "未知";
+    const utc = date.getTime() + date.getTimezoneOffset() * 60 * 1000;
+    const beijing = new Date(utc + 8 * 60 * 60 * 1000);
+    const pad = (value: number) => String(value).padStart(2, "0");
+    return `${beijing.getFullYear()}-${pad(
+      beijing.getMonth() + 1
+    )}-${pad(beijing.getDate())} ${pad(beijing.getHours())}:${pad(
+      beijing.getMinutes()
+    )}:${pad(beijing.getSeconds())}`;
+  })();
+  const extensionLinks = (site.extensionLinks ?? []).filter(
+    (link) => Boolean(link.label) && Boolean(link.url)
+  );
+  const hasMoreLinks = extensionLinks.length > 0;
+  const checkinHref = site.supportsCheckin
+    ? site.checkinUrl?.trim() ||
+      `${site.apiBaseUrl.replace(/\/$/, "")}/console/personal`
+    : "";
+  const isCardActive = isHovered || maintainerMenuOpen || moreMenuOpen;
+  const registrationBadgeClass = (() => {
+    switch (site.registrationLimit) {
+      case 0:
+        return "border-slate-200 bg-slate-50 text-slate-600";
+      case 1:
+        return "border-sky-200 bg-sky-50 text-sky-700";
+      case 2:
+        return "border-indigo-200 bg-indigo-50 text-indigo-700";
+      case 3:
+        return "border-brand-blue/50 bg-brand-blue/10 text-amber-700/90";
+      default:
+        return "border-brand-blue/30 bg-brand-blue/5 text-brand-blue";
+    }
+  })();
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(site.apiBaseUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy:", error);
+    }
+  };
+
+  const tagContainerRef = useRef<HTMLDivElement | null>(null);
+  const tagMeasureRef = useRef<HTMLDivElement | null>(null);
+  const tagLabels = useMemo(() => {
+    return Array.from(new Set(site.tags));
+  }, [site.tags]);
+  const [visibleTagCount, setVisibleTagCount] = useState(tagLabels.length);
+  const descriptionText =
+    site.description?.trim() || "暂无描述，快帮忙添加吧～";
+
+  useLayoutEffect(() => {
+    const container = tagContainerRef.current;
+    const measure = tagMeasureRef.current;
+    if (!container || !measure) return;
+
+    const computeVisibleCount = () => {
+      const containerWidth = container.clientWidth;
+      if (!containerWidth) return;
+      const gap = parseFloat(getComputedStyle(measure).gap || "0");
+      const nodes = Array.from(measure.children) as HTMLElement[];
+      if (nodes.length === 0) return;
+
+      const tagWidths = nodes
+        .slice(0, tagLabels.length)
+        .map((node) => node.offsetWidth);
+      const plusWidth = nodes[nodes.length - 1]?.offsetWidth ?? 0;
+
+      let used = 0;
+      let count = 0;
+      for (let i = 0; i < tagWidths.length; i += 1) {
+        const nextWidth = tagWidths[i];
+        const nextUsed = used + (count > 0 ? gap : 0) + nextWidth;
+        const remaining = tagLabels.length - (count + 1);
+        const needsPlus = remaining > 0;
+        const totalWithPlus = needsPlus ? nextUsed + gap + plusWidth : nextUsed;
+        if (totalWithPlus <= containerWidth) {
+          used = nextUsed;
+          count += 1;
+        } else {
+          break;
+        }
+      }
+
+      if (count !== visibleTagCount) {
+        setVisibleTagCount(count);
+      }
+    };
+
+    computeVisibleCount();
+
+    const resizeObserver = new ResizeObserver(() => {
+      computeVisibleCount();
+    });
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [tagLabels, visibleTagCount]);
+
+  useEffect(() => {
+    setVisibleTagCount(tagLabels.length);
+  }, [tagLabels.length]);
+
+  const visibleTagLabels = tagLabels.slice(0, visibleTagCount);
+  const hiddenTagCount = Math.max(0, tagLabels.length - visibleTagCount);
+  const hiddenTagLabels = tagLabels.slice(visibleTagCount).join(" / ");
+  const tagBadges = visibleTagLabels.map((tagLabel, index) => (
+    <Badge
+      key={`${tagLabel}-${index}`}
+      variant="secondary"
+      className="whitespace-nowrap px-1.5 py-0.5 text-[9px] font-medium"
+    >
+      {tagLabel}
+    </Badge>
+  ));
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{
+        opacity: 1,
+        y: isHovered || maintainerMenuOpen || moreMenuOpen ? -4 : 0,
+      }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+    >
+      <Card
+        className={`group relative h-full min-h-[280px] overflow-hidden border border-brand-border bg-white transition-all duration-300 ${
+          isCardActive ? "border-brand-blue/30 shadow-lg" : ""
+        } ${isHidden ? "opacity-60 grayscale" : ""}`}
+      >
+        <div className="flex h-full flex-col gap-3 p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              {/* Maintainer Avatar */}
+              <motion.div
+                whileHover={{
+                  scale: 1.08,
+                  boxShadow: "0 0 28px rgba(255,177,3,0.55)",
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="rounded-full"
+              >
+                <div className="relative h-11 w-11 shrink-0">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.35)_35%,rgba(255,255,255,0)_60%),linear-gradient(135deg,rgba(255,240,200,0.9)_0%,rgba(255,210,120,0.55)_45%,rgba(255,240,210,0.9)_100%),conic-gradient(from_210deg_at_45%_45%,#FFE7A6_0deg,#FFF3D6_70deg,#FFD980_140deg,#FFF0C9_205deg,#FFE7A6_290deg,#FFD46B_360deg)] text-brand-text shadow-[0_10px_24px_-12px_rgba(255,200,80,0.4)] ring-1 ring-white/40">
+                    {hasMultipleMaintainers ? (
+                      <DropdownMenu
+                        open={maintainerMenuOpen}
+                        onOpenChange={setMaintainerMenuOpen}
+                      >
+                        <DropdownMenuTrigger asChild>
+                          <div
+                            className="flex h-full w-full items-center justify-center rounded-full shadow-sm outline-none focus-visible:ring-0"
+                            onMouseEnter={() => setMaintainerMenuOpen(true)}
+                            onMouseLeave={() => setMaintainerMenuOpen(false)}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="维护者列表"
+                          >
+                            <span
+                              className={`max-w-[34px] truncate text-center font-semibold leading-none text-amber-900/80 ${maintainerTextClass}`}
+                            >
+                              {maintainerLabel}
+                            </span>
+                          </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="center"
+                          side="top"
+                          className="flex items-center justify-center gap-2 px-2 py-1.5"
+                          onMouseEnter={() => setMaintainerMenuOpen(true)}
+                          onMouseLeave={() => setMaintainerMenuOpen(false)}
+                        >
+                          {maintainerLinks.map((maintainer, index) => (
+                            <React.Fragment
+                              key={`${maintainer.name}-${maintainer.url}`}
+                            >
+                              {index > 0 && (
+                                <span className="h-3 w-px bg-brand-muted/40" />
+                              )}
+                              <DropdownMenuItem
+                                asChild
+                                className="px-0 py-0 focus:bg-transparent data-[highlighted]:bg-transparent"
+                              >
+                                <a
+                                  href={maintainer.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-full px-1.5 py-0.5 text-xs font-medium text-brand-text transition-transform duration-150 hover:bg-brand-yellow/40 hover:scale-105"
+                                >
+                                  {maintainer.name}
+                                </a>
+                              </DropdownMenuItem>
+                            </React.Fragment>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            {primaryMaintainerUrl ? (
+                              <a
+                                href={primaryMaintainerUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Visit ${
+                                  primaryMaintainer?.name ?? "maintainer"
+                                } profile`}
+                                className="flex h-full w-full items-center justify-center rounded-full shadow-sm outline-none focus-visible:ring-0"
+                              >
+                                <span
+                                  className={`max-w-[34px] truncate text-center font-semibold leading-none text-amber-900/80 ${maintainerTextClass}`}
+                                >
+                                  {maintainerLabel}
+                                </span>
+                              </a>
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center rounded-full shadow-sm">
+                                <span
+                                  className={`max-w-[34px] truncate text-center font-semibold leading-none text-amber-900/80 ${maintainerTextClass}`}
+                                >
+                                  {maintainerLabel}
+                                </span>
+                              </div>
+                            )}
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {primaryMaintainer?.name || "站长"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                  {hasMultipleMaintainers && (
+                    <span className="pointer-events-none absolute -right-1 -top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border border-white/70 bg-amber-200 px-1 text-[9px] font-semibold text-amber-900 shadow-sm">
+                      {maintainerLinks.length}
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Title & Meta */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="min-w-0 truncate text-base font-semibold tracking-tight text-brand-text">
+                    {site.apiBaseUrl ? (
+                      <a
+                        href={site.apiBaseUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-brand-blue"
+                      >
+                        {site.name}
+                      </a>
+                    ) : (
+                      site.name
+                    )}
+                  </h3>
+                </div>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[9px] font-semibold ${registrationBadgeClass}`}
+                        >
+                          LV{site.registrationLimit}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>等级要求</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className="px-1.5 py-0.5 text-[9px] font-semibold"
+                        >
+                          {rateLimitLabel}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>速率限制</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex shrink-0 gap-1">
+              {canEdit && (
+                <motion.div whileTap={{ scale: 0.95 }}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => onEdit(site)}
+                    className="h-8 w-8 text-muted-foreground hover:text-brand-text"
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              )}
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onToggleFavorite(site.id)}
+                  className={`h-8 w-8 ${
+                    isFavorite
+                      ? "text-yellow-500 hover:text-yellow-600"
+                      : "text-muted-foreground"
+                  }`}
+                  title="Favorite"
+                >
+                  <Star
+                    className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
+                  />
+                </Button>
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onToggleHidden(site.id)}
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  title="Hide"
+                >
+                  <EyeOff className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Content Group: Tags + Description */}
+          <div className="flex flex-col gap-2 min-h-[4.25rem]">
+            <div className="relative h-[1.75rem] shrink-0">
+              <div
+                ref={tagContainerRef}
+                className="flex max-h-[1.75rem] flex-nowrap gap-1 overflow-hidden"
+              >
+                {tagBadges}
+                {hiddenTagCount > 0 && (
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="secondary"
+                          className="whitespace-nowrap px-1.5 py-0.5 text-[9px] font-medium"
+                        >
+                          +{hiddenTagCount}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>{hiddenTagLabels}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              <div
+                ref={tagMeasureRef}
+                className="pointer-events-none absolute left-0 top-0 -z-10 flex max-h-[1.75rem] flex-nowrap gap-1 opacity-0"
+              >
+                {tagLabels.map((label, index) => (
+                  <Badge
+                    key={`${label}-${index}`}
+                    variant="secondary"
+                    className="whitespace-nowrap px-1.5 py-0.5 text-[9px] font-medium"
+                  >
+                    {label}
+                  </Badge>
+                ))}
+                <Badge
+                  variant="secondary"
+                  className="whitespace-nowrap px-1.5 py-0.5 text-[9px] font-medium"
+                >
+                  +{Math.max(1, tagLabels.length - 1)}
+                </Badge>
+              </div>
+            </div>
+            <p
+              className={`h-8 line-clamp-2 text-xs leading-4 ${
+                site.description?.trim()
+                  ? "text-brand-muted/80"
+                  : "italic text-brand-muted/50"
+              }`}
+            >
+              {descriptionText}
+            </p>
+          </div>
+
+          {/* API Endpoint */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-bold tracking-wider text-brand-muted/70">
+              <span>API ENDPOINT</span>
+            </div>
+            <motion.div
+              className="group/url relative"
+              whileHover={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              role="button"
+              tabIndex={0}
+              onClick={handleCopyUrl}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleCopyUrl();
+                }
+              }}
+              aria-label="复制 API 地址"
+            >
+              <div className="rounded-lg border border-brand-border bg-gray-50/50 px-3 py-2.5 text-[11px] font-mono text-brand-muted transition-colors group-hover/url:border-brand-blue/20 group-hover/url:bg-white">
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 truncate">{site.apiBaseUrl}</span>
+                  {copied ? (
+                    <Check className="h-3 w-3 shrink-0 text-brand-green" />
+                  ) : (
+                    <Copy className="h-3 w-3 shrink-0 text-brand-blue opacity-50 group-hover/url:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-auto space-y-3 border-t border-gray-100 pt-4">
+            <div className="flex items-center justify-between">
+              <TooltipProvider delayDuration={0}>
+                <div className="flex gap-2">
+                {[
+                  {
+                    enabled: site.supportsCheckin,
+                    href: checkinHref,
+                    icon: CalendarCheck,
+                    label: "签到页",
+                    title: site.checkinNote?.trim() || "签到页",
+                  },
+                  {
+                    enabled: Boolean(site.benefitUrl),
+                    href: site.benefitUrl,
+                    icon: Gift,
+                    label: "福利站",
+                  },
+                  {
+                    enabled: Boolean(site.statusUrl),
+                    href: site.statusUrl,
+                    icon: Activity,
+                    label: "状态页",
+                  },
+                ].map(({ href, icon: Icon, label, enabled, title }) => {
+                  const displayTitle = enabled
+                    ? title || label
+                    : `${label}（暂无）`;
+                  if (enabled && href) {
+                    return (
+                      <Tooltip key={label}>
+                        <TooltipTrigger asChild>
+                          <motion.a
+                            href={href as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue shadow-[0_2px_8px_-4px_rgba(37,99,235,0.45)]">
+                              <Icon className="h-4 w-4" />
+                              <span className="sr-only">{label}</span>
+                            </div>
+                          </motion.a>
+                        </TooltipTrigger>
+                        <TooltipContent>{displayTitle}</TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+
+                  return (
+                    <Tooltip key={label}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-gray-50 text-brand-muted/50 opacity-60"
+                          aria-disabled="true"
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="sr-only">{label}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>{displayTitle}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                {hasMoreLinks ? (
+                  <DropdownMenu
+                    open={moreMenuOpen}
+                    onOpenChange={setMoreMenuOpen}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="focus:outline-none"
+                      >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue shadow-[0_2px_8px_-4px_rgba(37,99,235,0.45)]">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">更多</span>
+                        </div>
+                      </motion.button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      side="bottom"
+                      sideOffset={6}
+                      avoidCollisions={false}
+                    >
+                      <DropdownMenuLabel>更多选项</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {extensionLinks.map((link) => (
+                        <DropdownMenuItem
+                          key={`${link.label}-${link.url}`}
+                          asChild
+                        >
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="cursor-pointer"
+                          >
+                            {link.label}
+                          </a>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-gray-50 text-brand-muted/50 opacity-60"
+                        aria-disabled="true"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">更多</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>更多（暂无）</TooltipContent>
+                  </Tooltip>
+                )}
+                </div>
+              </TooltipProvider>
+              <div className="flex items-center gap-2 text-brand-muted/70">
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                        supportsTranslation
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-rose-200 bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      <Languages className="h-4 w-4" />
+                      <span className="sr-only">
+                        {supportsTranslation
+                          ? "支持沉浸式翻译"
+                          : "禁止沉浸式翻译"}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {supportsTranslation ? "支持沉浸式翻译" : "禁止沉浸式翻译"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                        site.supportsLdc
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-gray-200 bg-gray-50 text-gray-400"
+                      }`}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span className="sr-only">
+                        {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              </div>
+            </div>
+            <div className="text-[10px] font-medium text-brand-muted/70">
+              更新时间：{formattedUpdatedAt}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
