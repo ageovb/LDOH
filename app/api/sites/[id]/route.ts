@@ -163,6 +163,12 @@ export async function PATCH(
         profileUrl: normalizeString(maintainer.profileUrl) || null,
       }))
       .filter((maintainer) => maintainer.name || maintainer.profileUrl);
+    if (maintainers.length === 0) {
+      return NextResponse.json(
+        { error: "至少添加一位维护者（站长）" },
+        { status: 400 }
+      );
+    }
     const maintainerInsertPromise =
       maintainers.length > 0
         ? supabaseAdmin.from("site_maintainers").insert(

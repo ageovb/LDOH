@@ -239,7 +239,14 @@ export function SiteEditorDialog({
           profileUrl: resolvedUrl,
         };
       });
-      await onSubmit({ ...form, maintainers: normalizedMaintainers });
+      const validMaintainers = normalizedMaintainers.filter(
+        (maintainer) => maintainer.name || maintainer.profileUrl
+      );
+      if (validMaintainers.length === 0) {
+        setError("至少添加一位维护者（站长）");
+        return;
+      }
+      await onSubmit({ ...form, maintainers: validMaintainers });
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : "保存失败";
