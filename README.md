@@ -10,6 +10,7 @@ LDOH（Linux Do Open Hub）是一个开发信息导航平台。
 - 站点新增 / 编辑（LD OAuth，LV2 及以上）
 - 站长可隐藏自己的站点（仅本人可见）
 - 根据等级显示站点
+- 更新日志
 
 ## 技术栈
 
@@ -52,6 +53,7 @@ SESSION_SECRET=
 ENV=dev                           # dev 模式，跳过 OAuth，返回 mock 用户
 LD_DEV_USERNAME=dev               # dev 模式 mock 用户名
 LD_DEV_TRUST_LEVEL=2              # dev 模式 mock trust_level
+LD_DEV_USER_ID=0                  # dev 模式 mock user_id（>0 才写入 created_by）
 LD_OAUTH_AUTHORIZATION_ENDPOINT=  # 默认 https://connect.linux.do/oauth2/authorize
 LD_OAUTH_TOKEN_ENDPOINT=          # 默认 https://connect.linux.do/oauth2/token
 LD_OAUTH_USER_ENDPOINT=           # 默认 https://connect.linux.do/api/user
@@ -82,6 +84,7 @@ lib/contracts/           # 类型定义
 - `GET /api/sites`：拉取站点与推荐标签
 - `POST /api/sites`：新增站点（LV2）
 - `PATCH /api/sites/[id]`：编辑站点（LV2）
+- `GET /api/sites/[id]/logs`：站点操作日志
 - `GET /api/ld/user`：当前用户信息（用于权限判断）
 
 ## 标签策略

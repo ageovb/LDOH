@@ -45,6 +45,9 @@ function normalizeList<T>(value: unknown): T[] {
 
 export async function POST(request: NextRequest) {
   try {
+    const devActorId = Number(process.env.LD_DEV_USER_ID);
+    let actorId = Number.isFinite(devActorId) && devActorId > 0 ? devActorId : 0;
+    let actorUsername = process.env.LD_DEV_USERNAME || "dev";
     if (process.env.ENV !== "dev") {
       const sessionId = getSessionIdFromCookies(request.cookies);
       if (!sessionId) {
@@ -57,6 +60,8 @@ export async function POST(request: NextRequest) {
       }
 
       const user = await fetchLdUser(session.accessToken);
+      actorId = user.id;
+      actorUsername = user.username;
       if (user.trust_level < 2) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -88,6 +93,8 @@ export async function POST(request: NextRequest) {
         rate_limit: normalizeString(payload.rateLimit) || null,
         status_url: normalizeString(payload.statusUrl) || null,
         is_visible: payload.isVisible ?? true,
+        created_by: actorId > 0 ? actorId : null,
+        updated_by: actorId > 0 ? actorId : null,
       })
       .select("id")
       .single();
@@ -108,7 +115,13 @@ export async function POST(request: NextRequest) {
       tags.length > 0
         ? supabaseAdmin
             .from("site_tags")
-            .insert(tags.map((tagId) => ({ site_id: siteId, tag_id: tagId })))
+            .insert(
+              tags.map((tagId) => ({
+                site_id: siteId,
+                tag_id: tagId,
+                created_by: actorId > 0 ? actorId : null,
+              }))
+            )
         : Promise.resolve({ error: null });
 
     const maintainers = normalizeList<MaintainerPayload>(payload.maintainers)
@@ -131,6 +144,8 @@ export async function POST(request: NextRequest) {
               name: maintainer.name,
               profile_url: maintainer.profileUrl,
               sort_order: index,
+              created_by: actorId > 0 ? actorId : null,
+              updated_by: actorId > 0 ? actorId : null,
             }))
           )
         : Promise.resolve({ error: null });
@@ -151,6 +166,8 @@ export async function POST(request: NextRequest) {
               label: link.label,
               url: link.url,
               sort_order: index,
+              created_by: actorId > 0 ? actorId : null,
+              updated_by: actorId > 0 ? actorId : null,
             }))
           )
         : Promise.resolve({ error: null });
@@ -165,6 +182,20 @@ export async function POST(request: NextRequest) {
       tagInsert.error || maintainerInsert.error || extensionInsert.error;
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    const logInsert = await supabaseAdmin.from("site_logs").insert({
+      site_id: siteId,
+      action: "CREATE",
+      actor_id: actorId,
+      actor_username: actorUsername,
+      message: "创建站点",
+    });
+    if (logInsert.error) {
+      return NextResponse.json(
+        { error: logInsert.error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ id: siteId });

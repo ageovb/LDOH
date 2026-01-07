@@ -42,6 +42,7 @@ import {
   Activity,
   CreditCard,
   Pencil,
+  History,
 } from "lucide-react";
 
 interface SiteCardProps {
@@ -50,6 +51,7 @@ interface SiteCardProps {
   isHidden: boolean;
   canEdit: boolean;
   onEdit: (site: Site) => void;
+  onViewLogs: (site: Site) => void;
   onToggleFavorite: (id: string) => void;
   onToggleHidden: (id: string) => void;
 }
@@ -60,6 +62,7 @@ export function SiteCard({
   isHidden,
   canEdit,
   onEdit,
+  onViewLogs,
   onToggleFavorite,
   onToggleHidden,
 }: SiteCardProps) {
@@ -392,7 +395,7 @@ export function SiteCard({
             </div>
 
             {/* Actions */}
-            <div className="flex shrink-0 gap-1">
+            <div className="flex shrink-0 gap-0">
               {canEdit && (
                 <motion.div whileTap={{ scale: 0.95 }}>
                   <Button
@@ -406,6 +409,17 @@ export function SiteCard({
                   </Button>
                 </motion.div>
               )}
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onViewLogs(site)}
+                  className="h-8 w-8 text-muted-foreground hover:text-brand-text"
+                  title="操作日志"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </motion.div>
               <motion.div whileTap={{ scale: 0.95 }}>
                 <Button
                   size="icon"

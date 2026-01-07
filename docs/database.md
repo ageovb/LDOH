@@ -23,8 +23,8 @@
 | is_visible | boolean | 否 | true | 是否在列表展示 |
 | created_at | timestamptz | 否 | now() | 创建时间 |
 | updated_at | timestamptz | 否 | now() | 更新时间 |
-| created_by | uuid | 是 | auth.uid() | 创建者 |
-| updated_by | uuid | 是 | auth.uid() | 更新者 |
+| created_by | bigint | 是 | - | 创建者（LD user_id） |
+| updated_by | bigint | 是 | - | 更新者（LD user_id） |
 
 约束：
 - UNIQUE(api_base_url)
@@ -41,7 +41,7 @@
 | site_id | uuid | 否 | - | 站点 ID |
 | tag_id | text | 否 | - | 标签（纯字符串） |
 | created_at | timestamptz | 否 | now() | 创建时间 |
-| created_by | uuid | 是 | auth.uid() | 创建者 |
+| created_by | bigint | 是 | - | 创建者（LD user_id） |
 
 约束：
 - PRIMARY KEY(site_id, tag_id)
@@ -63,8 +63,8 @@
 | sort_order | integer | 否 | 0 | 排序 |
 | created_at | timestamptz | 否 | now() | 创建时间 |
 | updated_at | timestamptz | 否 | now() | 更新时间 |
-| created_by | uuid | 是 | auth.uid() | 创建者 |
-| updated_by | uuid | 是 | auth.uid() | 更新者 |
+| created_by | bigint | 是 | - | 创建者（LD user_id） |
+| updated_by | bigint | 是 | - | 更新者（LD user_id） |
 
 约束：
 - PRIMARY KEY(id)
@@ -85,8 +85,8 @@
 | sort_order | integer | 否 | 0 | 排序 |
 | created_at | timestamptz | 否 | now() | 创建时间 |
 | updated_at | timestamptz | 否 | now() | 更新时间 |
-| created_by | uuid | 是 | auth.uid() | 创建者 |
-| updated_by | uuid | 是 | auth.uid() | 更新者 |
+| created_by | bigint | 是 | - | 创建者（LD user_id） |
+| updated_by | bigint | 是 | - | 更新者（LD user_id） |
 
 约束：
 - PRIMARY KEY(id)
@@ -95,6 +95,27 @@
 索引：
 - site_extension_links_pkey (UNIQUE)
 - site_extension_links_site_id_idx
+
+## 表：site_logs
+
+| 字段 | 类型 | 可空 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| id | uuid | 否 | gen_random_uuid() | 日志主键 |
+| site_id | uuid | 否 | - | 站点 ID |
+| action | text | 否 | - | 操作类型（CREATE/UPDATE） |
+| actor_id | bigint | 否 | - | 操作人 LD user_id |
+| actor_username | text | 否 | - | 操作人用户名 |
+| message | text | 否 | - | 变更说明 |
+| created_at | timestamptz | 否 | now() | 创建时间 |
+
+约束：
+- PRIMARY KEY(id)
+- FOREIGN KEY(site_id) REFERENCES site(id) ON DELETE CASCADE
+
+索引：
+- site_logs_pkey (UNIQUE)
+- site_logs_site_id_idx
+- site_logs_created_at_idx
 
 ## 表：auth_sessions
 
