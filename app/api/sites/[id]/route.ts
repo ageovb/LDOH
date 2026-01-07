@@ -42,12 +42,36 @@ function normalizeList<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function formatValue(value: string | number | boolean | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return "空";
+  }
+  if (typeof value === "boolean") {
+    return value ? "是" : "否";
+  }
+  return String(value);
+}
+
+function formatList(values: string[]) {
+  if (!values.length) return "空";
+  return values.join(", ");
+}
+
+function normalizeTextList(values: string[]) {
+  return Array.from(
+    new Set(values.map((value) => value.trim()).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     let username = "";
+    const devActorId = Number(process.env.LD_DEV_USER_ID);
+    let actorId = Number.isFinite(devActorId) && devActorId > 0 ? devActorId : 0;
+    let actorUsername = process.env.LD_DEV_USERNAME || "dev";
     if (process.env.ENV !== "dev") {
       const sessionId = getSessionIdFromCookies(request.cookies);
       if (!sessionId) {
@@ -60,6 +84,8 @@ export async function PATCH(
       }
 
       const user = await fetchLdUser(session.accessToken);
+      actorId = user.id;
+      actorUsername = user.username;
       if (user.trust_level < 2) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -73,13 +99,50 @@ export async function PATCH(
       return NextResponse.json({ error: "Missing site id" }, { status: 400 });
     }
 
-    const maintainerCheck = await supabaseAdmin
-      .from("site_maintainers")
-      .select("profile_url")
-      .eq("site_id", siteId);
+    const [siteResponse, maintainerCheck, tagResponse, extensionResponse] =
+      await Promise.all([
+        supabaseAdmin
+          .from("site")
+          .select(
+            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_visible"
+          )
+          .eq("id", siteId)
+          .single(),
+        supabaseAdmin
+          .from("site_maintainers")
+          .select("name,profile_url,sort_order")
+          .eq("site_id", siteId),
+        supabaseAdmin
+          .from("site_tags")
+          .select("tag_id")
+          .eq("site_id", siteId),
+        supabaseAdmin
+          .from("site_extension_links")
+          .select("label,url,sort_order")
+          .eq("site_id", siteId),
+      ]);
+
+    if (siteResponse.error) {
+      return NextResponse.json(
+        { error: siteResponse.error.message },
+        { status: 500 }
+      );
+    }
     if (maintainerCheck.error) {
       return NextResponse.json(
         { error: maintainerCheck.error.message },
+        { status: 500 }
+      );
+    }
+    if (tagResponse.error) {
+      return NextResponse.json(
+        { error: tagResponse.error.message },
+        { status: 500 }
+      );
+    }
+    if (extensionResponse.error) {
+      return NextResponse.json(
+        { error: extensionResponse.error.message },
         { status: 500 }
       );
     }
@@ -100,6 +163,107 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Not allowed to change visibility" },
         { status: 403 }
+      );
+    }
+
+    const currentSite = siteResponse.data;
+    const currentTags = normalizeTextList(
+      (tagResponse.data ?? []).map((row) => row.tag_id || "")
+    );
+    const currentMaintainers = (maintainerCheck.data ?? [])
+      .slice()
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((row) => row.name || row.profile_url || "")
+      .filter(Boolean);
+    const currentExtensions = (extensionResponse.data ?? [])
+      .slice()
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((row) => `${row.label}(${row.url})`);
+
+    const nextTags = normalizeTextList(
+      normalizeList<string>(payload.tags).map((tag) => tag.trim())
+    );
+    const nextMaintainers = normalizeList<MaintainerPayload>(payload.maintainers)
+      .map((maintainer) => normalizeString(maintainer.name) || normalizeString(maintainer.profileUrl))
+      .filter(Boolean);
+    const nextExtensions = normalizeList<ExtensionPayload>(
+      payload.extensionLinks
+    )
+      .map((link) => `${normalizeString(link.label)}(${normalizeString(link.url)})`)
+      .filter((value) => value !== "()")
+      .filter(Boolean);
+
+    const changes: string[] = [];
+    const pushChange = (
+      label: string,
+      before: string | number | boolean | null | undefined,
+      after: string | number | boolean | null | undefined
+    ) => {
+      if (before === after) return;
+      changes.push(`${label}: ${formatValue(before)} -> ${formatValue(after)}`);
+    };
+    pushChange("名称", currentSite.name, payload.name.trim());
+    pushChange(
+      "描述",
+      normalizeString(currentSite.description || ""),
+      normalizeString(payload.description)
+    );
+    pushChange(
+      "登记等级",
+      currentSite.registration_limit ?? 2,
+      Number(payload.registrationLimit) || 0
+    );
+    pushChange("API Base URL", currentSite.api_base_url, payload.apiBaseUrl.trim());
+    pushChange(
+      "沉浸式翻译",
+      Boolean(currentSite.supports_immersive_translation),
+      Boolean(payload.supportsImmersiveTranslation)
+    );
+    pushChange("LDC", Boolean(currentSite.supports_ldc), Boolean(payload.supportsLdc));
+    pushChange(
+      "签到",
+      Boolean(currentSite.supports_checkin),
+      Boolean(payload.supportsCheckin)
+    );
+    pushChange(
+      "签到页",
+      normalizeString(currentSite.checkin_url || ""),
+      normalizeString(payload.checkinUrl)
+    );
+    pushChange(
+      "签到说明",
+      normalizeString(currentSite.checkin_note || ""),
+      normalizeString(payload.checkinNote)
+    );
+    pushChange(
+      "福利站",
+      normalizeString(currentSite.benefit_url || ""),
+      normalizeString(payload.benefitUrl)
+    );
+    pushChange(
+      "速率限制",
+      normalizeString(currentSite.rate_limit || ""),
+      normalizeString(payload.rateLimit)
+    );
+    pushChange(
+      "状态页",
+      normalizeString(currentSite.status_url || ""),
+      normalizeString(payload.statusUrl)
+    );
+    if (payload.isVisible !== undefined) {
+      pushChange("展示", Boolean(currentSite.is_visible), Boolean(payload.isVisible));
+    }
+    if (currentTags.join("|") !== nextTags.join("|")) {
+      changes.push(`标签: ${formatList(currentTags)} -> ${formatList(nextTags)}`);
+    }
+    if (currentMaintainers.join("|") !== nextMaintainers.join("|")) {
+      changes.push(
+        `站长: ${formatList(currentMaintainers)} -> ${formatList(nextMaintainers)}`
+      );
+    }
+    if (currentExtensions.join("|") !== nextExtensions.join("|")) {
+      changes.push(
+        `更多链接: ${formatList(currentExtensions)} -> ${formatList(nextExtensions)}`
       );
     }
 
@@ -124,6 +288,7 @@ export async function PATCH(
           payload.isVisible === undefined
             ? undefined
             : Boolean(payload.isVisible),
+        updated_by: actorId > 0 ? actorId : null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", siteId);
@@ -154,7 +319,13 @@ export async function PATCH(
       tags.length > 0
         ? supabaseAdmin
             .from("site_tags")
-            .insert(tags.map((tagId) => ({ site_id: siteId, tag_id: tagId })))
+            .insert(
+              tags.map((tagId) => ({
+                site_id: siteId,
+                tag_id: tagId,
+                created_by: actorId > 0 ? actorId : null,
+              }))
+            )
         : Promise.resolve({ error: null });
 
     const maintainers = normalizeList<MaintainerPayload>(payload.maintainers)
@@ -177,6 +348,8 @@ export async function PATCH(
               name: maintainer.name,
               profile_url: maintainer.profileUrl,
               sort_order: index,
+              created_by: actorId > 0 ? actorId : null,
+              updated_by: actorId > 0 ? actorId : null,
             }))
           )
         : Promise.resolve({ error: null });
@@ -197,6 +370,8 @@ export async function PATCH(
               label: link.label,
               url: link.url,
               sort_order: index,
+              created_by: actorId > 0 ? actorId : null,
+              updated_by: actorId > 0 ? actorId : null,
             }))
           )
         : Promise.resolve({ error: null });
@@ -211,6 +386,22 @@ export async function PATCH(
       tagInsert.error || maintainerInsert.error || extensionInsert.error;
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    const message =
+      changes.length > 0 ? `修改了：${changes.join("；")}` : "修改站点（无字段变更）";
+    const logInsert = await supabaseAdmin.from("site_logs").insert({
+      site_id: siteId,
+      action: "UPDATE",
+      actor_id: actorId,
+      actor_username: actorUsername,
+      message,
+    });
+    if (logInsert.error) {
+      return NextResponse.json(
+        { error: logInsert.error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ id: siteId });
