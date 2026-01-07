@@ -84,7 +84,7 @@ async function loadSitesFromSupabase(options?: {
 }): Promise<Site[]> {
   let siteQuery = supabaseAdmin.from("site").select("*");
   if (options?.includeHidden) {
-    // no filter
+    // no filter on visibility
   } else if (options?.includeIds && options.includeIds.length > 0) {
     siteQuery = siteQuery.or(
       `is_visible.eq.true,id.in.(${options.includeIds.join(",")})`
@@ -92,6 +92,7 @@ async function loadSitesFromSupabase(options?: {
   } else {
     siteQuery = siteQuery.eq("is_visible", true);
   }
+  siteQuery = siteQuery.eq("is_active", true);
   if (
     typeof options?.maxRegistrationLimit === "number" &&
     Number.isFinite(options.maxRegistrationLimit)
