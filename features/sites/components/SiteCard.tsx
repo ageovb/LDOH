@@ -42,6 +42,7 @@ import {
   Activity,
   CreditCard,
   Pencil,
+  History,
 } from "lucide-react";
 
 interface SiteCardProps {
@@ -51,6 +52,7 @@ interface SiteCardProps {
   canEdit: boolean;
   variant?: "grid" | "list";
   onEdit: (site: Site) => void;
+  onViewLogs: (site: Site) => void;
   onToggleFavorite: (id: string) => void;
   onToggleHidden: (id: string) => void;
 }
@@ -62,6 +64,7 @@ export function SiteCard({
   canEdit,
   variant = "grid",
   onEdit,
+  onViewLogs,
   onToggleFavorite,
   onToggleHidden,
 }: SiteCardProps) {
@@ -783,62 +786,59 @@ export function SiteCard({
             </div>
 
             {/* Actions */}
-            <div className="flex shrink-0 gap-1">
-              <TooltipProvider delayDuration={0}>
-                {canEdit && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.div whileTap={{ scale: 0.95 }}>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => onEdit(site)}
-                          className="h-8 w-8 text-muted-foreground hover:text-brand-text"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </motion.div>
-                    </TooltipTrigger>
-                    <TooltipContent>编辑</TooltipContent>
-                  </Tooltip>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div whileTap={{ scale: 0.95 }}>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => onToggleFavorite(site.id)}
-                        className={`h-8 w-8 ${
-                          isFavorite
-                            ? "text-yellow-500 hover:text-yellow-600"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        <Star
-                          className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
-                        />
-                      </Button>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>收藏</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div whileTap={{ scale: 0.95 }}>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => onToggleHidden(site.id)}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      >
-                        <EyeOff className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>隐藏</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className="flex shrink-0 gap-0">
+              {canEdit && (
+                <motion.div whileTap={{ scale: 0.95 }}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => onEdit(site)}
+                    className="h-8 w-8 text-muted-foreground hover:text-brand-text"
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </motion.div>
+              )}
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onViewLogs(site)}
+                  className="h-8 w-8 text-muted-foreground hover:text-brand-text"
+                  title="操作日志"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onToggleFavorite(site.id)}
+                  className={`h-8 w-8 ${
+                    isFavorite
+                      ? "text-yellow-500 hover:text-yellow-600"
+                      : "text-muted-foreground"
+                  }`}
+                  title="Favorite"
+                >
+                  <Star
+                    className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
+                  />
+                </Button>
+              </motion.div>
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => onToggleHidden(site.id)}
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  title="Hide"
+                >
+                  <EyeOff className="h-4 w-4" />
+                </Button>
+              </motion.div>
             </div>
           </div>
 

@@ -27,12 +27,10 @@ CREATE TABLE public.site (
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  created_by uuid DEFAULT auth.uid(),
-  updated_by uuid DEFAULT auth.uid(),
+  created_by bigint,
+  updated_by bigint,
   is_visible boolean NOT NULL DEFAULT true,
-  CONSTRAINT site_pkey PRIMARY KEY (id),
-  CONSTRAINT site_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT site_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id)
+  CONSTRAINT site_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.site_extension_links (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -42,12 +40,10 @@ CREATE TABLE public.site_extension_links (
   sort_order integer NOT NULL DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  created_by uuid DEFAULT auth.uid(),
-  updated_by uuid DEFAULT auth.uid(),
+  created_by bigint,
+  updated_by bigint,
   CONSTRAINT site_extension_links_pkey PRIMARY KEY (id),
-  CONSTRAINT site_extension_links_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id),
-  CONSTRAINT site_extension_links_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT site_extension_links_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id)
+  CONSTRAINT site_extension_links_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id)
 );
 CREATE TABLE public.site_maintainers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -57,19 +53,28 @@ CREATE TABLE public.site_maintainers (
   sort_order integer NOT NULL DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  created_by uuid DEFAULT auth.uid(),
-  updated_by uuid DEFAULT auth.uid(),
+  created_by bigint,
+  updated_by bigint,
   CONSTRAINT site_maintainers_pkey PRIMARY KEY (id),
-  CONSTRAINT site_maintainers_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id),
-  CONSTRAINT site_maintainers_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id),
-  CONSTRAINT site_maintainers_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES auth.users(id)
+  CONSTRAINT site_maintainers_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id)
 );
 CREATE TABLE public.site_tags (
   site_id uuid NOT NULL,
   tag_id text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
-  created_by uuid DEFAULT auth.uid(),
+  created_by bigint,
   CONSTRAINT site_tags_pkey PRIMARY KEY (site_id, tag_id),
-  CONSTRAINT site_tags_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id),
-  CONSTRAINT site_tags_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+  CONSTRAINT site_tags_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id)
+);
+
+CREATE TABLE public.site_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  site_id uuid NOT NULL,
+  action text NOT NULL,
+  actor_id bigint NOT NULL,
+  actor_username text NOT NULL,
+  message text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT site_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT site_logs_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id)
 );

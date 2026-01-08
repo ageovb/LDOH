@@ -11,6 +11,7 @@ import { Navigation } from "@/components/common/Navigation";
 import { FilterBar, ViewMode } from "@/features/sites/components/FilterBar";
 import { SiteCard } from "@/features/sites/components/SiteCard";
 import { SiteEditorDialog } from "@/features/sites/components/SiteEditorDialog";
+import { SiteLogDialog } from "@/features/sites/components/SiteLogDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
@@ -46,9 +47,15 @@ export function SiteHubPage({
   const [favorites, setFavorites] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<LdUser | null>(null);
+  
+  // Editor Dialog State
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"create" | "edit">("create");
   const [editingSite, setEditingSite] = useState<Site | null>(null);
+
+  // Log Dialog State
+  const [logOpen, setLogOpen] = useState(false);
+  const [viewingLogSite, setViewingLogSite] = useState<Site | null>(null);
 
   // 仅在客户端读取本地偏好
   useEffect(() => {
@@ -150,6 +157,11 @@ export function SiteHubPage({
     setEditorMode("edit");
     setEditingSite(site);
     setEditorOpen(true);
+  };
+
+  const handleViewLogs = (site: Site) => {
+    setViewingLogSite(site);
+    setLogOpen(true);
   };
 
   const reloadSites = async () => {
@@ -271,6 +283,7 @@ export function SiteHubPage({
                 canEdit={canManageSites}
                 variant={viewMode}
                 onEdit={handleOpenEdit}
+                onViewLogs={handleViewLogs}
                 onToggleFavorite={handleToggleFavorite}
                 onToggleHidden={handleToggleHidden}
               />
@@ -306,6 +319,15 @@ export function SiteHubPage({
         onClose={() => setEditorOpen(false)}
         onSubmit={handleSubmit}
       />
+
+      {viewingLogSite && (
+        <SiteLogDialog
+          open={logOpen}
+          siteId={viewingLogSite.id}
+          siteName={viewingLogSite.name}
+          onClose={() => setLogOpen(false)}
+        />
+      )}
     </>
   );
 }
