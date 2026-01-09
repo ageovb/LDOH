@@ -32,6 +32,7 @@ type SitePayload = {
   maintainers: MaintainerPayload[];
   extensionLinks: ExtensionPayload[];
   isVisible?: boolean;
+  updatedAt?: string;
 };
 
 function normalizeString(value?: string | null) {
@@ -104,7 +105,7 @@ export async function PATCH(
         supabaseAdmin
           .from("site")
           .select(
-            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_visible"
+            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_visible,updated_at"
           )
           .eq("id", siteId)
           .single(),
@@ -167,6 +168,21 @@ export async function PATCH(
     }
 
     const currentSite = siteResponse.data;
+
+    // 乐观锁检查
+    if (payload.updatedAt) {
+      const clientTime = new Date(payload.updatedAt).getTime();
+      const serverTime = new Date(currentSite.updated_at || "").getTime();
+
+      // 如果服务器数据比客户端数据新
+      if (serverTime > clientTime) {
+        return NextResponse.json(
+          { error: "该站点已被他人修改，请刷新页面后重试" },
+          { status: 409 }
+        );
+      }
+    }
+
     const currentTags = normalizeTextList(
       (tagResponse.data ?? []).map((row) => row.tag_id || "")
     );
