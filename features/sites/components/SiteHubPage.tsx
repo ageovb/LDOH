@@ -181,6 +181,11 @@ export function SiteHubPage({
       if (!isSiteMaintainer(editingSite)) {
         delete (nextPayload as { isVisible?: boolean }).isVisible;
       }
+
+      // 添加 updatedAt 用于乐观锁
+      if (editingSite.updatedAt) {
+        (nextPayload as { updatedAt?: string }).updatedAt = editingSite.updatedAt;
+      }
     }
     const response = await fetch(
       editorMode === "create" ? "/api/sites" : `/api/sites/${editingSite?.id}`,
