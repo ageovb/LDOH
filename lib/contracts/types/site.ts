@@ -10,8 +10,10 @@
 export interface Maintainer {
   /** 站长显示名称 */
   name: string;
-  /** 站长 ID */
+  /** 站长 ID（历史字段，兼容旧数据） */
   id: string;
+  /** 站长用户名（LinuxDo username） */
+  username?: string;
   /** 站长主页 URL */
   profileUrl?: string;
 }

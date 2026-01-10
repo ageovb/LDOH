@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 type MaintainerForm = {
   name: string;
   profileUrl: string;
+  username?: string;
 };
 
 type ExtensionForm = {
@@ -77,7 +78,7 @@ const emptyForm: SiteFormData = {
   benefitUrl: "",
   rateLimit: "",
   statusUrl: "",
-  maintainers: [{ name: "", profileUrl: "" }],
+  maintainers: [{ name: "", profileUrl: "", username: "" }],
   extensionLinks: [],
   isVisible: true,
 };
@@ -107,6 +108,7 @@ export function SiteEditorDialog({
   const buildLinuxDoProfileUrl = (linuxDoId: string) =>
     linuxDoId ? `https://linux.do/u/${linuxDoId}/summary` : "";
 
+
   useEffect(() => {
     if (!open) return;
     setActiveTab("basic");
@@ -130,7 +132,11 @@ export function SiteEditorDialog({
         maintainers: site.maintainers?.map((maintainer) => ({
           name: maintainer.name || "",
           profileUrl: maintainer.profileUrl || "",
-        })) || [{ name: "", profileUrl: "" }],
+          username:
+            maintainer.username ||
+            (maintainer.profileUrl?.match(/linux\.do\/u\/([^/]+)\/summary/i)?.[1] ||
+              ""),
+        })) || [{ name: "", profileUrl: "", username: "" }],
         extensionLinks:
           site.extensionLinks?.map((link) => ({
             label: link.label || "",
@@ -205,6 +211,7 @@ export function SiteEditorDialog({
         if (parsedId && !nextItem.name.trim()) {
           nextItem.name = parsedId;
         }
+        nextItem.username = parsedId;
       }
       next[index] = nextItem;
       return { ...prev, maintainers: next };
@@ -237,6 +244,7 @@ export function SiteEditorDialog({
           name: maintainer.name.trim() || parsedId,
           id: parsedId,
           profileUrl: resolvedUrl,
+          username: maintainer.username || parsedId,
         };
       });
       const validMaintainers = normalizedMaintainers.filter(
@@ -637,7 +645,7 @@ export function SiteEditorDialog({
                             ...prev,
                             maintainers: [
                               ...prev.maintainers,
-                              { name: "", profileUrl: "" },
+                              { name: "", profileUrl: "", username: "" },
                             ],
                           }))
                         }

@@ -87,10 +87,16 @@ export function SiteHubPage({
   const isSiteMaintainer = (site: Site) =>
     isDevUser ||
     (normalizedUsername
-      ? site.maintainers.some(
-          (maintainer) =>
-            maintainer.id && maintainer.id.toLowerCase() === normalizedUsername
-        )
+      ? site.maintainers.some((maintainer) => {
+          const maintainerUsername =
+            maintainer.username ||
+            (maintainer.profileUrl?.match(/linux\.do\/u\/([^/]+)\/summary/i)?.[1] ||
+              "");
+          return (
+            maintainerUsername &&
+            maintainerUsername.toLowerCase() === normalizedUsername
+          );
+        })
       : false);
 
   const filteredSites = useMemo(() => {

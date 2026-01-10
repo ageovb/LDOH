@@ -49,6 +49,7 @@ CREATE TABLE public.site_maintainers (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   site_id uuid NOT NULL,
   name text NOT NULL,
+  username text,
   profile_url text,
   sort_order integer NOT NULL DEFAULT 0,
   created_at timestamp with time zone NOT NULL DEFAULT now(),

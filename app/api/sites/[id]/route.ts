@@ -8,6 +8,7 @@ type MaintainerPayload = {
   name: string;
   id: string;
   profileUrl?: string;
+  username?: string;
 };
 
 type ExtensionPayload = {
@@ -111,7 +112,7 @@ export async function PATCH(
           .single(),
         supabaseAdmin
           .from("site_maintainers")
-          .select("name,profile_url,sort_order")
+          .select("name,username,profile_url,sort_order")
           .eq("site_id", siteId),
         supabaseAdmin
           .from("site_tags")
@@ -149,10 +150,13 @@ export async function PATCH(
     }
 
     const maintainerIds = (maintainerCheck.data ?? [])
-      .map((row) => row.profile_url || "")
-      .map((url) => {
-        const match = url.match(/linux\.do\/u\/([^/]+)\/summary/i);
-        return match ? match[1] : "";
+      .map((row) => row.username || row.profile_url || "")
+      .map((value) => {
+        if (value.includes("linux.do/u/")) {
+          const match = value.match(/linux\.do\/u\/([^/]+)\/summary/i);
+          return match ? match[1] : "";
+        }
+        return value;
       })
       .filter(Boolean);
     const isMaintainer =
@@ -189,7 +193,7 @@ export async function PATCH(
     const currentMaintainers = (maintainerCheck.data ?? [])
       .slice()
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-      .map((row) => row.name || row.profile_url || "")
+      .map((row) => row.name || row.username || row.profile_url || "")
       .filter(Boolean);
     const currentExtensions = (extensionResponse.data ?? [])
       .slice()
@@ -348,6 +352,7 @@ export async function PATCH(
       .map((maintainer) => ({
         name: normalizeString(maintainer.name),
         profileUrl: normalizeString(maintainer.profileUrl) || null,
+        username: normalizeString(maintainer.username) || null,
       }))
       .filter((maintainer) => maintainer.name || maintainer.profileUrl);
     if (maintainers.length === 0) {
@@ -356,12 +361,24 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    const resolvedMaintainers = await Promise.all(
+      maintainers.map(async (maintainer) => {
+        const profileUrl = maintainer.profileUrl || "";
+        const match = profileUrl.match(/linux\.do\/u\/([^/]+)\/summary/i);
+        const username = maintainer.username || (match ? match[1] : "");
+        return {
+          ...maintainer,
+          username,
+        };
+      })
+    );
     const maintainerInsertPromise =
-      maintainers.length > 0
+      resolvedMaintainers.length > 0
         ? supabaseAdmin.from("site_maintainers").insert(
-            maintainers.map((maintainer, index) => ({
+            resolvedMaintainers.map((maintainer, index) => ({
               site_id: siteId,
               name: maintainer.name,
+              username: maintainer.username || null,
               profile_url: maintainer.profileUrl,
               sort_order: index,
               created_by: actorId > 0 ? actorId : null,

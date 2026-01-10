@@ -59,6 +59,7 @@
 | id | uuid | 否 | gen_random_uuid() | 主键 |
 | site_id | uuid | 否 | - | 站点 ID |
 | name | text | 否 | - | 站长显示名称 |
+| username | text | 是 | - | 站长用户名（LinuxDo username） |
 | profile_url | text | 是 | - | 站长主页链接（LinuxDo 个人页） |
 | sort_order | integer | 否 | 0 | 排序 |
 | created_at | timestamptz | 否 | now() | 创建时间 |

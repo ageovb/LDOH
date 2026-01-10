@@ -73,6 +73,15 @@ export function SiteCard({
   const [maintainerMenuOpen, setMaintainerMenuOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const primaryMaintainer = site.maintainers?.[0];
+  const maintainerUsernames = (site.maintainers ?? [])
+    .map(
+      (maintainer) =>
+        maintainer.username ||
+        maintainer.profileUrl?.match(/linux\.do\/u\/([^/]+)\/summary/i)?.[1] ||
+        ""
+    )
+    .filter(Boolean);
+  const maintainerUsernamesAttr = maintainerUsernames.join(",");
   const maintainerLinks = (site.maintainers ?? [])
     .filter((maintainer) => Boolean(maintainer.profileUrl))
     .map((maintainer) => ({
@@ -244,7 +253,10 @@ export function SiteCard({
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 className="rounded-full"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.35)_35%,rgba(255,255,255,0)_60%),linear-gradient(135deg,rgba(255,240,200,0.9)_0%,rgba(255,210,120,0.55)_45%,rgba(255,240,210,0.9)_100%),conic-gradient(from_210deg_at_45%_45%,#FFE7A6_0deg,#FFF3D6_70deg,#FFD980_140deg,#FFF0C9_205deg,#FFE7A6_290deg,#FFD46B_360deg)] text-brand-text shadow-sm ring-1 ring-white/40">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.35)_35%,rgba(255,255,255,0)_60%),linear-gradient(135deg,rgba(255,240,200,0.9)_0%,rgba(255,210,120,0.55)_45%,rgba(255,240,210,0.9)_100%),conic-gradient(from_210deg_at_45%_45%,#FFE7A6_0deg,#FFF3D6_70deg,#FFD980_140deg,#FFF0C9_205deg,#FFE7A6_290deg,#FFD46B_360deg)] text-brand-text shadow-sm ring-1 ring-white/40"
+                  data-ld-username={maintainerUsernamesAttr}
+                >
                   {hasMultipleMaintainers ? (
                     <DropdownMenu
                       open={maintainerMenuOpen}
@@ -639,7 +651,10 @@ export function SiteCard({
                 className="rounded-full"
               >
                 <div className="relative h-11 w-11 shrink-0">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.35)_35%,rgba(255,255,255,0)_60%),linear-gradient(135deg,rgba(255,240,200,0.9)_0%,rgba(255,210,120,0.55)_45%,rgba(255,240,210,0.9)_100%),conic-gradient(from_210deg_at_45%_45%,#FFE7A6_0deg,#FFF3D6_70deg,#FFD980_140deg,#FFF0C9_205deg,#FFE7A6_290deg,#FFD46B_360deg)] text-brand-text shadow-[0_10px_24px_-12px_rgba(255,200,80,0.4)] ring-1 ring-white/40">
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[radial-gradient(120%_120%_at_30%_20%,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.35)_35%,rgba(255,255,255,0)_60%),linear-gradient(135deg,rgba(255,240,200,0.9)_0%,rgba(255,210,120,0.55)_45%,rgba(255,240,210,0.9)_100%),conic-gradient(from_210deg_at_45%_45%,#FFE7A6_0deg,#FFF3D6_70deg,#FFD980_140deg,#FFF0C9_205deg,#FFE7A6_290deg,#FFD46B_360deg)] text-brand-text shadow-[0_10px_24px_-12px_rgba(255,200,80,0.4)] ring-1 ring-white/40"
+                    data-ld-username={maintainerUsernamesAttr}
+                  >
                     {hasMultipleMaintainers ? (
                       <DropdownMenu
                         open={maintainerMenuOpen}

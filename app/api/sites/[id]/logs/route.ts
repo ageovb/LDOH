@@ -53,7 +53,9 @@ export async function GET(
           .from("site_maintainers")
           .select("id")
           .eq("site_id", siteId)
-          .ilike("profile_url", `%/u/${user.username}/summary%`)
+          .or(
+            `username.ilike.${user.username},profile_url.ilike.%/u/${user.username}/summary%`
+          )
           .limit(1);
         if (maintainerResponse.error) {
           return NextResponse.json(

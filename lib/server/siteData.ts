@@ -37,6 +37,7 @@ type SupabaseTagLink = {
 type SupabaseMaintainer = {
   site_id: string;
   name: string;
+  username?: string | null;
   profile_url: string | null;
   sort_order: number | null;
 };
@@ -51,6 +52,7 @@ type SupabaseExtensionLink = {
 type MaintainerEntry = {
   name: string;
   id: string;
+  username?: string;
   profileUrl?: string;
   sortOrder: number;
 };
@@ -120,7 +122,7 @@ async function loadSitesFromSupabase(options?: {
         .in("site_id", siteIds),
       supabaseAdmin
         .from("site_maintainers")
-        .select("site_id,name,profile_url,sort_order")
+        .select("site_id,name,username,profile_url,sort_order")
         .in("site_id", siteIds),
       supabaseAdmin
         .from("site_extension_links")
@@ -157,12 +159,17 @@ async function loadSitesFromSupabase(options?: {
 
   const maintainersBySite = new Map<string, MaintainerEntry[]>();
   for (const maintainer of maintainers) {
+    const parsedUsername =
+      maintainer.username ||
+      parseLinuxDoId(maintainer.profile_url) ||
+      "";
     if (!maintainersBySite.has(maintainer.site_id)) {
       maintainersBySite.set(maintainer.site_id, []);
     }
     maintainersBySite.get(maintainer.site_id)!.push({
       name: maintainer.name,
-      id: parseLinuxDoId(maintainer.profile_url),
+      id: parsedUsername,
+      username: parsedUsername || undefined,
       profileUrl: maintainer.profile_url || undefined,
       sortOrder:
         typeof maintainer.sort_order === "number" ? maintainer.sort_order : 0,
@@ -200,6 +207,7 @@ async function loadSitesFromSupabase(options?: {
     maintainers: (maintainersBySite.get(site.id) ?? []).map((maintainer) => ({
       name: maintainer.name,
       id: maintainer.id,
+      username: maintainer.username,
       profileUrl: maintainer.profileUrl,
     })),
     rateLimit: site.rate_limit || "",
@@ -241,8 +249,8 @@ async function loadMaintainerSiteIds(username: string): Promise<string[]> {
   if (!username) return [];
   const response = await supabaseAdmin
     .from("site_maintainers")
-    .select("site_id,profile_url")
-    .ilike("profile_url", `%/u/${username}/summary%`);
+    .select("site_id,username,profile_url")
+    .or(`username.ilike.${username},profile_url.ilike.%/u/${username}/summary%`);
   if (response.error) {
     throw new Error(`Supabase fetch failed: ${response.error.message}`);
   }
