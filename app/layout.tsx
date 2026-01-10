@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { NotificationBanner } from "@/components/common/NotificationBanner";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,6 +26,7 @@ export default function RootLayout({
         className={`${inter.variable} min-h-screen font-sans antialiased`}
         suppressHydrationWarning
       >
+        <NotificationBanner />
         {children}
       </body>
     </html>

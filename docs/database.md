@@ -137,3 +137,28 @@
 索引：
 - auth_sessions_pkey (UNIQUE)
 - auth_sessions_session_expires_at_idx
+
+## 表：system_notifications
+
+| 字段 | 类型 | 可空 | 默认 | 说明 |
+| --- | --- | --- | --- | --- |
+| id | uuid | 否 | gen_random_uuid() | 通知主键 |
+| title | text | 否 | - | 通知标题 |
+| content | text | 否 | - | 通知内容（支持 Markdown 格式，可包含链接） |
+| valid_from | timestamptz | 否 | now() | 生效时间 |
+| valid_until | timestamptz | 是 | - | 失效时间（null 表示永久有效） |
+| is_active | boolean | 否 | true | 是否启用 |
+| created_at | timestamptz | 否 | now() | 创建时间 |
+| updated_at | timestamptz | 否 | now() | 更新时间 |
+| created_by | bigint | 是 | - | 创建者（LD user_id） |
+| updated_by | bigint | 是 | - | 更新者（LD user_id） |
+
+约束：
+- PRIMARY KEY(id)
+
+索引：
+- system_notifications_pkey (UNIQUE)
+- system_notifications_valid_from_idx
+- system_notifications_valid_until_idx
+- system_notifications_is_active_idx
+

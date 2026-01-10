@@ -79,3 +79,18 @@ CREATE TABLE public.site_logs (
   CONSTRAINT site_logs_pkey PRIMARY KEY (id),
   CONSTRAINT site_logs_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id)
 );
+
+CREATE TABLE public.system_notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  content text NOT NULL,
+  valid_from timestamp with time zone NOT NULL DEFAULT now(),
+  valid_until timestamp with time zone,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  created_by bigint,
+  updated_by bigint,
+  CONSTRAINT system_notifications_pkey PRIMARY KEY (id)
+);
+
