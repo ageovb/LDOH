@@ -59,6 +59,9 @@ LD_OAUTH_TOKEN_ENDPOINT=          # 默认 https://connect.linux.do/oauth2/token
 LD_OAUTH_USER_ENDPOINT=           # 默认 https://connect.linux.do/api/user
 LD_OAUTH_REFRESH_BUFFER_SECONDS=120
 LD_OAUTH_TOKEN_COOKIE_MAX_AGE=2592000 # 会话有效期（秒），默认 30 天
+NEXT_PUBLIC_SWR_FOCUS_THROTTLE_INTERVAL=300000 # SWR 聚焦刷新节流（ms）
+NEXT_PUBLIC_SWR_REFRESH_INTERVAL=1800000       # SWR 自动刷新间隔（ms）
+NEXT_PUBLIC_REPO_URL=                          # 导航栏 GitHub 按钮链接
 ```
 
 ## 项目结构（简化）
@@ -85,6 +88,7 @@ lib/contracts/           # 类型定义
 - `POST /api/sites`：新增站点（LV2）
 - `PATCH /api/sites/[id]`：编辑站点（LV2）
 - `GET /api/sites/[id]/logs`：站点操作日志
+- `GET /api/notifications`：系统通知（有效期内、已启用）
 - `GET /api/ld/user`：当前用户信息（用于权限判断）
 
 ## 标签策略
@@ -92,6 +96,15 @@ lib/contracts/           # 类型定义
 - tag 仅为字符串（无 id/name 区分）
 - 推荐标签默认包含：Claude Code / Codex / Gemini CLI
 - 推荐标签与站点已有 tag 去重合并
+
+## 系统通知
+
+- 表：`system_notifications`（见 `docs/system-notifications.md` / `docs/database.md`）
+- 获取通知：`GET /api/notifications`
+- 生效规则：
+  - `is_active = true`
+  - `valid_from <= now()`
+  - `valid_until is null 或 valid_until >= now()`
 
 ## 维护者规则
 

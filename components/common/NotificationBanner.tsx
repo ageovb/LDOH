@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { X, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import useSWR from "swr";
 
 interface Notification {
   id: string;
@@ -13,36 +14,37 @@ interface Notification {
   valid_until: string | null;
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export function NotificationBanner() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // 1. User Auth Check (Simple fetch, no SWR needed for one-time check, or useSWRImmutable)
+  const { data: userData } = useSWR("/api/ld/user", fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+
+  const isLoggedIn = !!userData?.username;
+
+  // 2. Notifications Fetch (SWR) - Only fetch if logged in
+  const { data: notifData } = useSWR(
+    isLoggedIn ? "/api/notifications" : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      focusThrottleInterval: Number(process.env.NEXT_PUBLIC_SWR_FOCUS_THROTTLE_INTERVAL) || 5 * 60 * 1000,
+      refreshInterval: Number(process.env.NEXT_PUBLIC_SWR_REFRESH_INTERVAL) || 30 * 60 * 1000,
+    }
+  );
+
+  const notifications: Notification[] = notifData?.notifications || [];
 
   useEffect(() => {
     setMounted(true);
-    
-    // Check auth and fetch notifications
-    const init = async () => {
-      try {
-        // 1. Check Login
-        const userRes = await fetch("/api/ld/user");
-        if (!userRes.ok) return; // Not logged in
-        
-        setIsLoggedIn(true);
-
-        // 2. Fetch Notifications
-        const notifRes = await fetch("/api/notifications");
-        const data = await notifRes.json();
-        setNotifications(data.notifications || []);
-      } catch (error) {
-        console.error("Failed to init notifications:", error);
-      }
-    };
-
-    init();
   }, []);
 
   // Auto-rotate
@@ -70,7 +72,9 @@ export function NotificationBanner() {
 
   if (!mounted || !isLoggedIn || !isVisible || notifications.length === 0) return null;
 
-  const currentNotification = notifications[currentIndex];
+  // Safe guard for index if notifications change
+  const safeIndex = currentIndex >= notifications.length ? 0 : currentIndex;
+  const currentNotification = notifications[safeIndex];
 
   return (
     <div className="w-full bg-brand-blue/5 border-b border-brand-blue/10">
@@ -112,7 +116,7 @@ export function NotificationBanner() {
                 <ReactMarkdown 
                   components={{
                     p: ({children}) => <span className="inline">{children}</span>,
-                    a: ({node, ...props}) => (
+                    a: (props) => (
                       <a {...props} target="_blank" rel="noopener noreferrer" />
                     )
                   }}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
 import { Site } from "@/lib/contracts/types/site";
 import { Tag } from "@/lib/contracts/types/tag";
 import { FilterOptions } from "@/lib/contracts/types/filter";
@@ -27,13 +28,28 @@ type LdUser = {
   trust_level: number;
 };
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export function SiteHubPage({
   initialSites,
   tags,
   dataWarning,
 }: SiteHubPageProps) {
-  const [sites, setSites] = useState<Site[]>(initialSites);
-  const [tagOptions, setTagOptions] = useState<Tag[]>(tags);
+  // SWR for Sites Data
+  const { data: sitesData, mutate } = useSWR(
+    "/api/sites",
+    fetcher,
+    {
+      fallbackData: { sites: initialSites, tags },
+      revalidateOnFocus: true,
+      focusThrottleInterval: Number(process.env.NEXT_PUBLIC_SWR_FOCUS_THROTTLE_INTERVAL) || 5 * 60 * 1000,
+      refreshInterval: Number(process.env.NEXT_PUBLIC_SWR_REFRESH_INTERVAL) || 30 * 60 * 1000,
+    }
+  );
+
+  const sites = sitesData?.sites ?? initialSites;
+  const tagOptions = sitesData?.tags ?? tags;
+
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
@@ -43,7 +59,6 @@ export function SiteHubPage({
     "all" | "ldc" | "translation" | "checkin"
   >("all");
   const [showHidden, setShowHidden] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [favorites, setFavorites] = useState<string[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<LdUser | null>(null);
@@ -52,6 +67,9 @@ export function SiteHubPage({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorMode, setEditorMode] = useState<"create" | "edit">("create");
   const [editingSite, setEditingSite] = useState<Site | null>(null);
+
+  // View Mode State
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   // Log Dialog State
   const [logOpen, setLogOpen] = useState(false);
@@ -87,16 +105,10 @@ export function SiteHubPage({
   const isSiteMaintainer = (site: Site) =>
     isDevUser ||
     (normalizedUsername
-      ? site.maintainers.some((maintainer) => {
-          const maintainerUsername =
-            maintainer.username ||
-            (maintainer.profileUrl?.match(/linux\.do\/u\/([^/]+)\/summary/i)?.[1] ||
-              "");
-          return (
-            maintainerUsername &&
-            maintainerUsername.toLowerCase() === normalizedUsername
-          );
-        })
+      ? site.maintainers.some(
+          (maintainer) =>
+            maintainer.id && maintainer.id.toLowerCase() === normalizedUsername
+        )
       : false);
 
   const filteredSites = useMemo(() => {
@@ -170,27 +182,11 @@ export function SiteHubPage({
     setLogOpen(true);
   };
 
-  const reloadSites = async () => {
-    const response = await fetch("/api/sites", { cache: "no-store" });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || "刷新数据失败");
-    }
-    const data = await response.json();
-    setSites(data.sites ?? []);
-    setTagOptions(data.tags ?? []);
-  };
-
   const handleSubmit = async (payload: Record<string, unknown>) => {
     const nextPayload = { ...payload };
     if (editorMode === "edit" && editingSite) {
       if (!isSiteMaintainer(editingSite)) {
         delete (nextPayload as { isVisible?: boolean }).isVisible;
-      }
-
-      // 添加 updatedAt 用于乐观锁
-      if (editingSite.updatedAt) {
-        (nextPayload as { updatedAt?: string }).updatedAt = editingSite.updatedAt;
       }
     }
     const response = await fetch(
@@ -205,7 +201,7 @@ export function SiteHubPage({
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || "保存失败");
     }
-    await reloadSites();
+    await mutate(); // Revalidate SWR data
   };
 
   if (loading) {
