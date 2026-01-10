@@ -28,7 +28,13 @@ type LdUser = {
   trust_level: number;
 };
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+type SitesResponse = {
+  sites: Site[];
+  tags: Tag[];
+};
+
+const fetcher = (url: string) =>
+  fetch(url).then((res) => res.json() as Promise<SitesResponse>);
 
 export function SiteHubPage({
   initialSites,
@@ -36,7 +42,7 @@ export function SiteHubPage({
   dataWarning,
 }: SiteHubPageProps) {
   // SWR for Sites Data
-  const { data: sitesData, mutate } = useSWR(
+  const { data: sitesData, mutate } = useSWR<SitesResponse>(
     "/api/sites",
     fetcher,
     {
