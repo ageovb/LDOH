@@ -70,7 +70,10 @@ class FilterService implements IFilterService {
         (site) =>
           site.name.toLowerCase().includes(keyword) ||
           site.apiBaseUrl.toLowerCase().includes(keyword) ||
-          (site.description?.toLowerCase().includes(keyword) ?? false)
+          (site.description?.toLowerCase().includes(keyword) ?? false) ||
+          site.maintainers.some((maintainer) =>
+            maintainer.name.toLowerCase().includes(keyword)
+          )
       );
     }
 
