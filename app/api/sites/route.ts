@@ -3,6 +3,11 @@ import { supabaseAdmin } from "@/lib/db/supabaseAdmin";
 import { getLdUserWithCache } from "@/lib/auth/ld-user";
 import { getSessionIdFromCookies } from "@/lib/auth/ld-oauth";
 import { buildTagOptionsFromSites, loadSitesData } from "@/lib/server/siteData";
+import {
+  normalizeApiBaseUrl,
+  checkApiBaseUrlExists,
+  UrlValidationError,
+} from "@/lib/utils/url";
 
 type MaintainerPayload = {
   name: string;
@@ -77,13 +82,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let normalizedApiBaseUrl = "";
+    try {
+      normalizedApiBaseUrl = normalizeApiBaseUrl(payload.apiBaseUrl).normalized;
+    } catch (error) {
+      if (error instanceof UrlValidationError) {
+        return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
+      }
+      throw error;
+    }
+
+    const conflict = await checkApiBaseUrlExists(normalizedApiBaseUrl);
+    if (conflict.exists && conflict.conflictingSite) {
+      return NextResponse.json(
+        { error: "API Base URL 已存在", conflictingSite: conflict.conflictingSite },
+        { status: 409 }
+      );
+    }
+
     const insertResponse = await supabaseAdmin
       .from("site")
       .insert({
         name: payload.name.trim(),
         description: normalizeString(payload.description) || null,
         registration_limit: Number(payload.registrationLimit) || 0,
-        api_base_url: payload.apiBaseUrl.trim(),
+        api_base_url: normalizedApiBaseUrl,
         supports_immersive_translation: Boolean(
           payload.supportsImmersiveTranslation
         ),

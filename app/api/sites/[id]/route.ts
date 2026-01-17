@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db/supabaseAdmin";
 import { getLdUserWithCache } from "@/lib/auth/ld-user";
 import { getSessionIdFromCookies } from "@/lib/auth/ld-oauth";
+import {
+  normalizeApiBaseUrl,
+  checkApiBaseUrlExists,
+  UrlValidationError,
+} from "@/lib/utils/url";
 
 type MaintainerPayload = {
   name: string;
@@ -100,6 +105,29 @@ export async function PATCH(
     const siteId = params.id;
     if (!siteId) {
       return NextResponse.json({ error: "Missing site id" }, { status: 400 });
+    }
+
+    let normalizedApiBaseUrl: string | undefined;
+    if (payload.apiBaseUrl !== undefined) {
+      try {
+        normalizedApiBaseUrl = normalizeApiBaseUrl(payload.apiBaseUrl).normalized;
+      } catch (error) {
+        if (error instanceof UrlValidationError) {
+          return NextResponse.json(
+            { error: "Invalid URL format" },
+            { status: 400 }
+          );
+        }
+        throw error;
+      }
+
+      const conflict = await checkApiBaseUrlExists(normalizedApiBaseUrl, siteId);
+      if (conflict.exists && conflict.conflictingSite) {
+        return NextResponse.json(
+          { error: "API Base URL 已存在", conflictingSite: conflict.conflictingSite },
+          { status: 409 }
+        );
+      }
     }
 
     const [siteResponse, maintainerCheck, tagResponse, extensionResponse] =
@@ -234,7 +262,11 @@ export async function PATCH(
       currentSite.registration_limit ?? 2,
       Number(payload.registrationLimit) || 0
     );
-    pushChange("API Base URL", currentSite.api_base_url, payload.apiBaseUrl.trim());
+    pushChange(
+      "API Base URL",
+      currentSite.api_base_url,
+      normalizedApiBaseUrl ?? payload.apiBaseUrl?.trim() ?? currentSite.api_base_url
+    );
     pushChange(
       "沉浸式翻译",
       Boolean(currentSite.supports_immersive_translation),
@@ -299,7 +331,7 @@ export async function PATCH(
         name: payload.name.trim(),
         description: normalizeString(payload.description) || null,
         registration_limit: Number(payload.registrationLimit) || 0,
-        api_base_url: payload.apiBaseUrl.trim(),
+        api_base_url: normalizedApiBaseUrl ?? payload.apiBaseUrl?.trim(),
         supports_immersive_translation: Boolean(
           payload.supportsImmersiveTranslation
         ),
