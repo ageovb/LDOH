@@ -24,6 +24,7 @@ CREATE TABLE public.site (
   supports_immersive_translation boolean NOT NULL DEFAULT false,
   supports_ldc boolean NOT NULL DEFAULT false,
   supports_checkin boolean NOT NULL DEFAULT false,
+  supports_nsfw boolean NOT NULL DEFAULT false,
   checkin_url text,
   checkin_note text,
   benefit_url text,

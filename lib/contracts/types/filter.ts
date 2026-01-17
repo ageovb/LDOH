@@ -13,7 +13,7 @@ export interface FilterOptions {
   /** 按登记等级筛选 */
   registrationLimit?: number | 'all';
   /** 按特性筛选 */
-  feature?: 'all' | 'ldc' | 'translation' | 'checkin';
+  feature?: 'all' | 'ldc' | 'translation' | 'checkin' | 'nsfw';
   /** 关键词搜索（站点名称） */
   searchKeyword?: string;
   /** 仅显示收藏的站点 */

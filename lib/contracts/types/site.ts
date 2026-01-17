@@ -52,6 +52,8 @@ export interface Site {
   supportsLdc: boolean;
   /** 是否支持签到 */
   supportsCheckin: boolean;
+  /** 是否支持 NSFW */
+  supportsNsfw: boolean;
   /** 签到页面地址 (可选) */
   checkinUrl?: string;
   /** 签到说明或备注 (可选) */

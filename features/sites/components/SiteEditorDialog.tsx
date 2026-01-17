@@ -44,6 +44,7 @@ type SiteFormData = {
   supportsImmersiveTranslation: boolean;
   supportsLdc: boolean;
   supportsCheckin: boolean;
+  supportsNsfw: boolean;
   checkinUrl: string;
   checkinNote: string;
   benefitUrl: string;
@@ -73,6 +74,7 @@ const emptyForm: SiteFormData = {
   supportsImmersiveTranslation: false,
   supportsLdc: false,
   supportsCheckin: false,
+  supportsNsfw: false,
   checkinUrl: "",
   checkinNote: "",
   benefitUrl: "",
@@ -124,6 +126,7 @@ export function SiteEditorDialog({
         ),
         supportsLdc: Boolean(site.supportsLdc),
         supportsCheckin: Boolean(site.supportsCheckin),
+        supportsNsfw: Boolean(site.supportsNsfw),
         checkinUrl: site.checkinUrl || "",
         checkinNote: site.checkinNote || "",
         benefitUrl: site.benefitUrl || "",
@@ -531,6 +534,14 @@ export function SiteEditorDialog({
                         title="支持 LDC"
                         description="是否支持 Linux Do Credit"
                       />
+                      <ToggleCard
+                        checked={form.supportsNsfw}
+                        onChange={(c) =>
+                          setForm((p) => ({ ...p, supportsNsfw: c }))
+                        }
+                        title="支持 NSFW"
+                        description="是否支持 NSFW（18）"
+                      />
                       {mode === "edit" && canEditVisibility && (
                         <ToggleCard
                           checked={!form.isVisible}
@@ -888,7 +899,7 @@ function ToggleCard({
   onChange: (checked: boolean) => void;
   title: string;
   description: string;
-  variant?: "default" | "danger";
+  variant?: "default" | "danger" | "warning-amber";
 }) {
   return (
     <div
@@ -897,6 +908,8 @@ function ToggleCard({
         checked
           ? variant === "danger"
             ? "border-red-200 bg-red-50/50"
+            : variant === "warning-amber"
+            ? "border-amber-200 bg-amber-50/50"
             : "border-brand-blue/30 bg-brand-blue/5"
           : "border-brand-border bg-white"
       )}
@@ -908,6 +921,8 @@ function ToggleCard({
           checked
             ? variant === "danger"
               ? "border-red-500 bg-red-500 text-white"
+              : variant === "warning-amber"
+              ? "border-amber-500 bg-amber-500 text-white"
               : "border-brand-blue bg-brand-blue text-white"
             : "border-slate-300 bg-white"
         )}
@@ -918,7 +933,7 @@ function ToggleCard({
         <h4
           className={cn(
             "text-sm font-medium",
-            variant === "danger" && checked ? "text-red-700" : "text-brand-text"
+            variant === "danger" && checked ? "text-red-700" : variant === "warning-amber" && checked ? "text-amber-700" : "text-brand-text"
           )}
         >
           {title}

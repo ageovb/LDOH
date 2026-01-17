@@ -24,7 +24,7 @@ interface FilterBarProps {
   tags: Tag[];
   selectedTag: string;
   selectedRegistrationLimit: string;
-  selectedFeature: "all" | "ldc" | "translation" | "checkin";
+  selectedFeature: "all" | "ldc" | "translation" | "checkin" | "nsfw";
   searchQuery: string;
   totalCount: number;
   showHidden: boolean;
@@ -32,7 +32,7 @@ interface FilterBarProps {
   viewMode: ViewMode;
   onTagChange: (tagId: string) => void;
   onRegistrationLimitChange: (value: string) => void;
-  onFeatureChange: (value: "all" | "ldc" | "translation" | "checkin") => void;
+  onFeatureChange: (value: "all" | "ldc" | "translation" | "checkin" | "nsfw") => void;
   onSearchChange: (query: string) => void;
   onToggleShowHidden: () => void;
   onCreate: () => void;
@@ -139,6 +139,9 @@ export function FilterBar({
             </SelectItem>
             <SelectItem value="checkin" className="text-xs">
               签到
+            </SelectItem>
+            <SelectItem value="nsfw" className="text-xs">
+              NSFW
             </SelectItem>
           </SelectContent>
         </Select>

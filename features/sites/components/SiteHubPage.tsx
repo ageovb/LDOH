@@ -62,7 +62,7 @@ export function SiteHubPage({
   const [selectedRegistrationLimit, setSelectedRegistrationLimit] =
     useState("all");
   const [selectedFeature, setSelectedFeature] = useState<
-    "all" | "ldc" | "translation" | "checkin"
+    "all" | "ldc" | "translation" | "checkin" | "nsfw"
   >("all");
   const [showHidden, setShowHidden] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);

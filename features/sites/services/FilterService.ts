@@ -60,6 +60,9 @@ class FilterService implements IFilterService {
         case 'checkin':
           filtered = filtered.filter((site) => site.supportsCheckin);
           break;
+        case 'nsfw':
+          filtered = filtered.filter((site) => site.supportsNsfw);
+          break;
       }
     }
 

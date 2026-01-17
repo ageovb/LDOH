@@ -15,6 +15,7 @@
 | supports_immersive_translation | boolean | 否 | false | 支持沉浸式翻译 |
 | supports_ldc | boolean | 否 | false | 支持 LDC |
 | supports_checkin | boolean | 否 | false | 支持签到 |
+| supports_nsfw | boolean | 否 | false | 支持 NSFW (成人内容) |
 | checkin_url | text | 是 | - | 签到地址 |
 | checkin_note | text | 是 | - | 签到说明 |
 | benefit_url | text | 是 | - | 福利站 |

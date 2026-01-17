@@ -24,6 +24,7 @@ type SitePayload = {
   supportsImmersiveTranslation: boolean;
   supportsLdc: boolean;
   supportsCheckin: boolean;
+  supportsNsfw: boolean;
   checkinUrl?: string;
   checkinNote?: string;
   benefitUrl?: string;
@@ -106,7 +107,7 @@ export async function PATCH(
         supabaseAdmin
           .from("site")
           .select(
-            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_visible,updated_at"
+            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,supports_nsfw,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_visible,updated_at"
           )
           .eq("id", siteId)
           .single(),
@@ -246,6 +247,11 @@ export async function PATCH(
       Boolean(payload.supportsCheckin)
     );
     pushChange(
+      "NSFW",
+      Boolean(currentSite.supports_nsfw),
+      Boolean(payload.supportsNsfw)
+    );
+    pushChange(
       "签到页",
       normalizeString(currentSite.checkin_url || ""),
       normalizeString(payload.checkinUrl)
@@ -299,6 +305,7 @@ export async function PATCH(
         ),
         supports_ldc: Boolean(payload.supportsLdc),
         supports_checkin: Boolean(payload.supportsCheckin),
+        supports_nsfw: Boolean(payload.supportsNsfw),
         checkin_url: normalizeString(payload.checkinUrl) || null,
         checkin_note: normalizeString(payload.checkinNote) || null,
         benefit_url: normalizeString(payload.benefitUrl) || null,

@@ -20,6 +20,7 @@ type SupabaseSite = {
   supports_immersive_translation: boolean | null;
   supports_ldc: boolean | null;
   supports_checkin: boolean | null;
+  supports_nsfw: boolean | null;
   checkin_url: string | null;
   checkin_note: string | null;
   benefit_url: string | null;
@@ -201,6 +202,7 @@ async function loadSitesFromSupabase(options?: {
     supportsImmersiveTranslation: Boolean(site.supports_immersive_translation),
     supportsLdc: Boolean(site.supports_ldc),
     supportsCheckin: Boolean(site.supports_checkin),
+    supportsNsfw: Boolean(site.supports_nsfw),
     checkinUrl: site.checkin_url || "",
     checkinNote: site.checkin_note || "",
     benefitUrl: site.benefit_url || "",

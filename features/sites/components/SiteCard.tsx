@@ -42,7 +42,7 @@ import {
   Activity,
   CreditCard,
   Pencil,
-  History,
+  History
 } from "lucide-react";
 
 interface SiteCardProps {
@@ -114,11 +114,11 @@ export function SiteCard({
     const utc = date.getTime() + date.getTimezoneOffset() * 60 * 1000;
     const beijing = new Date(utc + 8 * 60 * 60 * 1000);
     const pad = (value: number) => String(value).padStart(2, "0");
-    return `${beijing.getFullYear()}-${pad(
-      beijing.getMonth() + 1
-    )}-${pad(beijing.getDate())} ${pad(beijing.getHours())}:${pad(
-      beijing.getMinutes()
-    )}:${pad(beijing.getSeconds())}`;
+    return `${beijing.getFullYear()}-${pad(beijing.getMonth() + 1)}-${pad(
+      beijing.getDate()
+    )} ${pad(beijing.getHours())}:${pad(beijing.getMinutes())}:${pad(
+      beijing.getSeconds()
+    )}`;
   })();
   const extensionLinks = (site.extensionLinks ?? []).filter(
     (link) => Boolean(link.label) && Boolean(link.url)
@@ -358,19 +358,26 @@ export function SiteCard({
             <div className="flex-1 min-w-0 flex items-center gap-2">
               <h3 className="truncate text-sm font-semibold text-brand-text">
                 {site.apiBaseUrl ? (
-                  <a href={site.apiBaseUrl} target="_blank" rel="noopener noreferrer" className="hover:text-brand-blue">
+                  <a
+                    href={site.apiBaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-brand-blue"
+                  >
                     {site.name}
                   </a>
                 ) : (
                   site.name
                 )}
               </h3>
-              
+
               <div className="flex items-center gap-2 shrink-0">
                 <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[9px] font-semibold ${registrationBadgeClass}`}>
+                      <span
+                        className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[9px] font-semibold ${registrationBadgeClass}`}
+                      >
                         LV{site.registrationLimit}
                       </span>
                     </TooltipTrigger>
@@ -378,7 +385,10 @@ export function SiteCard({
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant="secondary" className="px-1.5 py-0.5 text-[9px] font-semibold">
+                      <Badge
+                        variant="secondary"
+                        className="px-1.5 py-0.5 text-[9px] font-semibold"
+                      >
                         {rateLimitLabel}
                       </Badge>
                     </TooltipTrigger>
@@ -429,13 +439,19 @@ export function SiteCard({
                 {site.supportsCheckin && checkinHref ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <a href={checkinHref} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={checkinHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <div className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue">
                           <CalendarCheck className="h-3.5 w-3.5" />
                         </div>
                       </a>
                     </TooltipTrigger>
-                    <TooltipContent>{site.checkinNote?.trim() || "签到页"}</TooltipContent>
+                    <TooltipContent>
+                      {site.checkinNote?.trim() || "签到页"}
+                    </TooltipContent>
                   </Tooltip>
                 ) : (
                   <Tooltip>
@@ -451,7 +467,11 @@ export function SiteCard({
                 {site.benefitUrl ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <a href={site.benefitUrl} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={site.benefitUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <div className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue">
                           <Gift className="h-3.5 w-3.5" />
                         </div>
@@ -473,7 +493,11 @@ export function SiteCard({
                 {site.statusUrl ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <a href={site.statusUrl} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={site.statusUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <div className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue">
                           <Activity className="h-3.5 w-3.5" />
                         </div>
@@ -495,7 +519,10 @@ export function SiteCard({
                 {hasMoreLinks ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue hover:bg-brand-blue/10 focus:outline-none">
+                      <button
+                        type="button"
+                        className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue hover:bg-brand-blue/10 focus:outline-none"
+                      >
                         <MoreHorizontal className="h-3.5 w-3.5" />
                       </button>
                     </DropdownMenuTrigger>
@@ -503,8 +530,18 @@ export function SiteCard({
                       <DropdownMenuLabel>更多选项</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {extensionLinks.map((link) => (
-                        <DropdownMenuItem key={`${link.label}-${link.url}`} asChild>
-                          <a href={link.url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">{link.label}</a>
+                        <DropdownMenuItem
+                          key={`${link.label}-${link.url}`}
+                          asChild
+                        >
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="cursor-pointer"
+                          >
+                            {link.label}
+                          </a>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -524,27 +561,51 @@ export function SiteCard({
               <div className="flex items-center gap-1.5 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className={`flex h-7 w-7 items-center justify-center rounded-full border ${
-                      supportsTranslation
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-rose-200 bg-rose-50 text-rose-700"
-                    }`}>
+                    <div
+                      className={`flex h-7 w-7 items-center justify-center rounded-full border ${
+                        supportsTranslation
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-gray-200 bg-gray-50 text-gray-400"
+                      }`}
+                    >
                       <Languages className="h-3.5 w-3.5" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>{supportsTranslation ? "支持沉浸式翻译" : "禁止沉浸式翻译"}</TooltipContent>
+                  <TooltipContent>
+                    {supportsTranslation ? "支持沉浸式翻译" : "禁止沉浸式翻译"}
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className={`flex h-7 w-7 items-center justify-center rounded-full border ${
-                      site.supportsLdc
-                        ? "border-amber-200 bg-amber-50 text-amber-700"
-                        : "border-gray-200 bg-gray-50 text-gray-400"
-                    }`}>
+                    <div
+                      className={`flex h-7 w-7 items-center justify-center rounded-full border ${
+                        site.supportsLdc
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-gray-200 bg-gray-50 text-gray-400"
+                      }`}
+                    >
                       <CreditCard className="h-3.5 w-3.5" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>{site.supportsLdc ? "支持 LDC" : "不支持 LDC"}</TooltipContent>
+                  <TooltipContent>
+                    {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={`flex h-7 w-7 items-center justify-center rounded-full border ${
+                        site.supportsNsfw
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : "border-gray-200 bg-gray-50 text-gray-400"
+                      }`}
+                    >
+                      <span className="text-[9px] font-black leading-none">18+</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {site.supportsNsfw ? "支持 NSFW" : "禁止 NSFW"}
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </TooltipProvider>
@@ -560,7 +621,11 @@ export function SiteCard({
                       onClick={handleCopyUrl}
                       className="h-7 w-7 text-muted-foreground hover:text-brand-blue"
                     >
-                      {copied ? <Check className="h-3.5 w-3.5 text-brand-green" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copied ? (
+                        <Check className="h-3.5 w-3.5 text-brand-green" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>复制 API 地址</TooltipContent>
@@ -588,9 +653,17 @@ export function SiteCard({
                       size="icon"
                       variant="ghost"
                       onClick={() => onToggleFavorite(site.id)}
-                      className={`h-7 w-7 ${isFavorite ? "text-yellow-500 hover:text-yellow-600" : "text-muted-foreground"}`}
+                      className={`h-7 w-7 ${
+                        isFavorite
+                          ? "text-yellow-500 hover:text-yellow-600"
+                          : "text-muted-foreground"
+                      }`}
                     >
-                      <Star className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
+                      <Star
+                        className={`h-3.5 w-3.5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>收藏</TooltipContent>
@@ -951,171 +1024,194 @@ export function SiteCard({
             <div className="flex items-center justify-between">
               <TooltipProvider delayDuration={0}>
                 <div className="flex gap-2">
-                {[
-                  {
-                    enabled: site.supportsCheckin,
-                    href: checkinHref,
-                    icon: CalendarCheck,
-                    label: "签到页",
-                    title: site.checkinNote?.trim() || "签到页",
-                  },
-                  {
-                    enabled: Boolean(site.benefitUrl),
-                    href: site.benefitUrl,
-                    icon: Gift,
-                    label: "福利站",
-                  },
-                  {
-                    enabled: Boolean(site.statusUrl),
-                    href: site.statusUrl,
-                    icon: Activity,
-                    label: "状态页",
-                  },
-                ].map(({ href, icon: Icon, label, enabled, title }) => {
-                  const displayTitle = enabled
-                    ? title || label
-                    : `${label}（暂无）`;
-                  if (enabled && href) {
+                  {[
+                    {
+                      enabled: site.supportsCheckin,
+                      href: checkinHref,
+                      icon: CalendarCheck,
+                      label: "签到页",
+                      title: site.checkinNote?.trim() || "签到页",
+                    },
+                    {
+                      enabled: Boolean(site.benefitUrl),
+                      href: site.benefitUrl,
+                      icon: Gift,
+                      label: "福利站",
+                    },
+                    {
+                      enabled: Boolean(site.statusUrl),
+                      href: site.statusUrl,
+                      icon: Activity,
+                      label: "状态页",
+                    },
+                  ].map(({ href, icon: Icon, label, enabled, title }) => {
+                    const displayTitle = enabled
+                      ? title || label
+                      : `${label}（暂无）`;
+                    if (enabled && href) {
+                      return (
+                        <Tooltip key={label}>
+                          <TooltipTrigger asChild>
+                            <motion.a
+                              href={href as string}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.97 }}
+                            >
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue shadow-[0_2px_8px_-4px_rgba(37,99,235,0.45)]">
+                                <Icon className="h-4 w-4" />
+                                <span className="sr-only">{label}</span>
+                              </div>
+                            </motion.a>
+                          </TooltipTrigger>
+                          <TooltipContent>{displayTitle}</TooltipContent>
+                        </Tooltip>
+                      );
+                    }
+
                     return (
                       <Tooltip key={label}>
                         <TooltipTrigger asChild>
-                          <motion.a
-                            href={href as string}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.97 }}
+                          <div
+                            className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-gray-50 text-brand-muted/50 opacity-60"
+                            aria-disabled="true"
                           >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue shadow-[0_2px_8px_-4px_rgba(37,99,235,0.45)]">
-                              <Icon className="h-4 w-4" />
-                              <span className="sr-only">{label}</span>
-                            </div>
-                          </motion.a>
+                            <Icon className="h-4 w-4" />
+                            <span className="sr-only">{label}</span>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>{displayTitle}</TooltipContent>
                       </Tooltip>
                     );
-                  }
-
-                  return (
-                    <Tooltip key={label}>
+                  })}
+                  {hasMoreLinks ? (
+                    <DropdownMenu
+                      open={moreMenuOpen}
+                      onOpenChange={setMoreMenuOpen}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.97 }}
+                          className="focus:outline-none"
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue shadow-[0_2px_8px_-4px_rgba(37,99,235,0.45)]">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">更多</span>
+                          </div>
+                        </motion.button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        side="bottom"
+                        sideOffset={6}
+                        avoidCollisions={false}
+                      >
+                        <DropdownMenuLabel>更多选项</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {extensionLinks.map((link) => (
+                          <DropdownMenuItem
+                            key={`${link.label}-${link.url}`}
+                            asChild
+                          >
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="cursor-pointer"
+                            >
+                              {link.label}
+                            </a>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Tooltip>
                       <TooltipTrigger asChild>
                         <div
                           className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-gray-50 text-brand-muted/50 opacity-60"
                           aria-disabled="true"
                         >
-                          <Icon className="h-4 w-4" />
-                          <span className="sr-only">{label}</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>{displayTitle}</TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-                {hasMoreLinks ? (
-                  <DropdownMenu
-                    open={moreMenuOpen}
-                    onOpenChange={setMoreMenuOpen}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="focus:outline-none"
-                      >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-blue/30 bg-brand-blue/5 text-brand-blue shadow-[0_2px_8px_-4px_rgba(37,99,235,0.45)]">
                           <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">更多</span>
                         </div>
-                      </motion.button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="start"
-                      side="bottom"
-                      sideOffset={6}
-                      avoidCollisions={false}
-                    >
-                      <DropdownMenuLabel>更多选项</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {extensionLinks.map((link) => (
-                        <DropdownMenuItem
-                          key={`${link.label}-${link.url}`}
-                          asChild
-                        >
-                          <a
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="cursor-pointer"
-                          >
-                            {link.label}
-                          </a>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-gray-50 text-brand-muted/50 opacity-60"
-                        aria-disabled="true"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">更多</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>更多（暂无）</TooltipContent>
-                  </Tooltip>
-                )}
+                      </TooltipTrigger>
+                      <TooltipContent>更多（暂无）</TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
               </TooltipProvider>
               <div className="flex items-center gap-2 text-brand-muted/70">
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full border ${
-                        supportsTranslation
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-rose-200 bg-rose-50 text-rose-700"
-                      }`}
-                    >
-                      <Languages className="h-4 w-4" />
-                      <span className="sr-only">
-                        {supportsTranslation
-                          ? "支持沉浸式翻译"
-                          : "禁止沉浸式翻译"}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {supportsTranslation ? "支持沉浸式翻译" : "禁止沉浸式翻译"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full border ${
-                        site.supportsLdc
-                          ? "border-amber-200 bg-amber-50 text-amber-700"
-                          : "border-gray-200 bg-gray-50 text-gray-400"
-                      }`}
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      <span className="sr-only">
-                        {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                          supportsTranslation
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-gray-200 bg-gray-50 text-gray-400"
+                        }`}
+                      >
+                        <Languages className="h-4 w-4" />
+                        <span className="sr-only">
+                          {supportsTranslation
+                            ? "支持沉浸式翻译"
+                            : "禁止沉浸式翻译"}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {supportsTranslation
+                        ? "支持沉浸式翻译"
+                        : "禁止沉浸式翻译"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                          site.supportsLdc
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-gray-200 bg-gray-50 text-gray-400"
+                        }`}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        <span className="sr-only">
+                          {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {site.supportsLdc ? "支持 LDC" : "不支持 LDC"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+                          site.supportsNsfw
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-gray-200 bg-gray-50 text-gray-400"
+                        }`}
+                      >
+                        <span className="text-[10px] font-black leading-none">18+</span>
+                        <span className="sr-only">
+                          {site.supportsNsfw ? "支持 NSFW" : "禁止 NSFW"}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {site.supportsNsfw ? "支持 NSFW" : "禁止 NSFW"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
             <div className="text-[10px] font-medium text-brand-muted/70">

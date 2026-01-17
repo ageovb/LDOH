@@ -25,6 +25,7 @@ type SitePayload = {
   supportsImmersiveTranslation: boolean;
   supportsLdc: boolean;
   supportsCheckin: boolean;
+  supportsNsfw: boolean;
   checkinUrl?: string;
   checkinNote?: string;
   benefitUrl?: string;
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
         ),
         supports_ldc: Boolean(payload.supportsLdc),
         supports_checkin: Boolean(payload.supportsCheckin),
+        supports_nsfw: Boolean(payload.supportsNsfw),
         checkin_url: normalizeString(payload.checkinUrl) || null,
         checkin_note: normalizeString(payload.checkinNote) || null,
         benefit_url: normalizeString(payload.benefitUrl) || null,
