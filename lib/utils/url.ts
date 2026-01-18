@@ -162,10 +162,24 @@ export async function checkApiBaseUrlExists(
   const normalizedInput = normalizeApiBaseUrl(url);
   const inputProtocolAndDomain = normalizedInput.protocolAndDomain;
 
-  // 查询所有站点的 api_base_url
-  const { data: sites, error } = await supabaseAdmin
+  // 优化：使用数据库过滤，只查询可能匹配的站点
+  // 由于数据库中的 URL 已经标准化，我们可以使用模式匹配
+  let query = supabaseAdmin
     .from("site")
-    .select("id, name, api_base_url");
+    .select("id, name, api_base_url")
+    .or(
+      // 匹配完全相同的 URL
+      `api_base_url.eq.${inputProtocolAndDomain},` +
+      // 匹配带路径的 URL (协议+域名相同)
+      `api_base_url.like.${inputProtocolAndDomain}/%`
+    );
+
+  if (excludeSiteId) {
+    query = query.neq("id", excludeSiteId);
+  }
+
+  // 只需要查询一条记录
+  const { data: sites, error } = await query.limit(1);
 
   if (error) {
     throw new Error(`Failed to query sites: ${error.message}`);
@@ -175,35 +189,26 @@ export async function checkApiBaseUrlExists(
     return { exists: false };
   }
 
-  // 检查是否存在冲突
-  for (const site of sites) {
-    // 排除指定的站点 ID
-    if (excludeSiteId && site.id === excludeSiteId) {
-      continue;
-    }
+  // 由于数据库中的 URL 已经标准化，直接验证协议+域名
+  const site = sites[0];
+  try {
+    const normalizedSite = normalizeApiBaseUrl(site.api_base_url);
 
-    try {
-      // 标准化数据库中的 URL
-      const normalizedSite = normalizeApiBaseUrl(site.api_base_url);
-
-      // 比较协议+域名
-      if (normalizedSite.protocolAndDomain === inputProtocolAndDomain) {
-        return {
-          exists: true,
-          conflictingSite: {
-            id: site.id,
-            name: site.name,
-            apiBaseUrl: site.api_base_url,
-          },
-        };
-      }
-    } catch (error) {
-      // 如果数据库中的 URL 格式无效,跳过
-      console.warn(
-        `Invalid URL in database for site ${site.id}: ${site.api_base_url}`
-      );
-      continue;
+    if (normalizedSite.protocolAndDomain === inputProtocolAndDomain) {
+      return {
+        exists: true,
+        conflictingSite: {
+          id: site.id,
+          name: site.name,
+          apiBaseUrl: site.api_base_url,
+        },
+      };
     }
+  } catch (error) {
+    // 如果数据库中的 URL 格式无效,跳过
+    console.warn(
+      `Invalid URL in database for site ${site.id}: ${site.api_base_url}`
+    );
   }
 
   return { exists: false };
