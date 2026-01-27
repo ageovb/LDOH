@@ -42,7 +42,7 @@ import {
   Activity,
   CreditCard,
   Pencil,
-  History
+  History,
 } from "lucide-react";
 
 interface SiteCardProps {
@@ -161,7 +161,7 @@ export function SiteCard({
   }, [site.tags]);
   const [visibleTagCount, setVisibleTagCount] = useState(tagLabels.length);
   const descriptionText =
-    site.description?.trim() || "暂无描述，快帮忙添加吧～";
+    site.description?.trim() || "暂无描述，站长大大快来添加吧～";
 
   useLayoutEffect(() => {
     const container = tagContainerRef.current;
@@ -600,7 +600,9 @@ export function SiteCard({
                           : "border-gray-200 bg-gray-50 text-gray-400"
                       }`}
                     >
-                      <span className="text-[9px] font-black leading-none">18+</span>
+                      <span className="text-[9px] font-black leading-none">
+                        18+
+                      </span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -1201,7 +1203,9 @@ export function SiteCard({
                             : "border-gray-200 bg-gray-50 text-gray-400"
                         }`}
                       >
-                        <span className="text-[10px] font-black leading-none">18+</span>
+                        <span className="text-[10px] font-black leading-none">
+                          18+
+                        </span>
                         <span className="sr-only">
                           {site.supportsNsfw ? "支持 NSFW" : "禁止 NSFW"}
                         </span>
