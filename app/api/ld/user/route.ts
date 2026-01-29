@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getLdUserWithCache } from "@/lib/auth/ld-user";
 import { getSessionIdFromCookies } from "@/lib/auth/ld-oauth";
+import { getDevUserConfig } from "@/lib/auth/dev-user";
 
 export async function GET(request: NextRequest) {
   try {
     if (process.env.ENV === "dev") {
-      const devLevel = Number(process.env.LD_DEV_TRUST_LEVEL);
-      const trustLevel =
-        Number.isFinite(devLevel) && devLevel >= 0 ? devLevel : 2;
-      const devUsername = process.env.LD_DEV_USERNAME || "dev";
+      const devUser = getDevUserConfig();
       return NextResponse.json({
-        id: 0,
-        username: devUsername,
-        trust_level: trustLevel,
+        id: devUser.id,
+        username: devUser.username,
+        trust_level: devUser.trustLevel,
       });
     }
 

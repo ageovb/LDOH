@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/db/supabaseAdmin";
 import { getLdUserWithCache } from "@/lib/auth/ld-user";
 import { getSessionIdFromCookies } from "@/lib/auth/ld-oauth";
+import { getDevUserConfig } from "@/lib/auth/dev-user";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   let viewerTrustLevel = 0;
   if (process.env.ENV === "dev") {
-    const devLevel = Number(process.env.LD_DEV_TRUST_LEVEL);
-    viewerTrustLevel =
-      Number.isFinite(devLevel) && devLevel >= 0 ? devLevel : 2;
+    const devUser = getDevUserConfig();
+    viewerTrustLevel = devUser.trustLevel;
   } else {
     const sessionId = getSessionIdFromCookies(request.cookies);
     if (!sessionId) {

@@ -108,15 +108,13 @@ export function SiteHubPage({
 
   const canManageSites = (currentUser?.trust_level ?? 0) >= 2;
   const normalizedUsername = currentUser?.username?.toLowerCase() || "";
-  const isDevUser = normalizedUsername === "dev";
   const isSiteMaintainer = (site: Site) =>
-    isDevUser ||
-    (normalizedUsername
+    normalizedUsername
       ? site.maintainers.some(
           (maintainer) =>
             maintainer.id && maintainer.id.toLowerCase() === normalizedUsername
         )
-      : false);
+      : false;
 
   const filteredSites = useMemo(() => {
     const visibleSites = sites.filter(

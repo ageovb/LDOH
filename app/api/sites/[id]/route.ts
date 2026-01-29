@@ -8,6 +8,7 @@ import {
   UrlValidationError,
 } from "@/lib/utils/url";
 import { API_ERROR_CODES, type ApiErrorResponse } from "@/lib/constants/error-codes";
+import { getDevUserConfig } from "@/lib/auth/dev-user";
 
 type MaintainerPayload = {
   name: string;
@@ -77,10 +78,14 @@ export async function PATCH(
 ) {
   try {
     let username = "";
-    const devActorId = Number(process.env.LD_DEV_USER_ID);
-    let actorId = Number.isFinite(devActorId) && devActorId > 0 ? devActorId : 0;
-    let actorUsername = process.env.LD_DEV_USERNAME || "dev";
-    if (process.env.ENV !== "dev") {
+    let actorId = 0;
+    let actorUsername = "";
+    if (process.env.ENV === "dev") {
+      const devUser = getDevUserConfig();
+      actorId = devUser.id;
+      actorUsername = devUser.username;
+      username = devUser.username;
+    } else {
       const sessionId = getSessionIdFromCookies(request.cookies);
       if (!sessionId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -189,10 +194,9 @@ export async function PATCH(
         return value;
       })
       .filter(Boolean);
-    const isMaintainer =
-      process.env.ENV === "dev"
-        ? true
-        : maintainerIds.some((id) => id.toLowerCase() === username.toLowerCase());
+    const isMaintainer = maintainerIds.some(
+      (id) => id.toLowerCase() === username.toLowerCase()
+    );
 
     const currentSite = siteResponse.data;
     const normalizedCurrentDescription = normalizeString(

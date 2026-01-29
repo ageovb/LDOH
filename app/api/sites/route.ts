@@ -9,6 +9,7 @@ import {
   UrlValidationError,
 } from "@/lib/utils/url";
 import { API_ERROR_CODES, type ApiErrorResponse } from "@/lib/constants/error-codes";
+import { getDevUserConfig } from "@/lib/auth/dev-user";
 
 type MaintainerPayload = {
   name: string;
@@ -52,10 +53,13 @@ function normalizeList<T>(value: unknown): T[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const devActorId = Number(process.env.LD_DEV_USER_ID);
-    let actorId = Number.isFinite(devActorId) && devActorId > 0 ? devActorId : 0;
-    let actorUsername = process.env.LD_DEV_USERNAME || "dev";
-    if (process.env.ENV !== "dev") {
+    let actorId = 0;
+    let actorUsername = "";
+    if (process.env.ENV === "dev") {
+      const devUser = getDevUserConfig();
+      actorId = devUser.id;
+      actorUsername = devUser.username;
+    } else {
       const sessionId = getSessionIdFromCookies(request.cookies);
       if (!sessionId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -197,12 +201,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     if (process.env.ENV === "dev") {
-      const devLevel = Number(process.env.LD_DEV_TRUST_LEVEL);
-      const trustLevel =
-        Number.isFinite(devLevel) && devLevel >= 0 ? devLevel : 2;
+      const devUser = getDevUserConfig();
       const sites = await loadSitesData({
         includeHidden: true,
-        maxRegistrationLimit: trustLevel,
+        maxRegistrationLimit: devUser.trustLevel,
       });
       const tags = buildTagOptionsFromSites(sites);
       return NextResponse.json({ sites, tags });
