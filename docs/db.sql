@@ -99,3 +99,15 @@ CREATE TABLE public.system_notifications (
   updated_by bigint,
   CONSTRAINT system_notifications_pkey PRIMARY KEY (id)
 );
+
+CREATE TABLE public.site_health_status (
+  site_id uuid NOT NULL,
+  status text NOT NULL,
+  http_status integer,
+  latency_ms integer,
+  checked_at timestamp with time zone NOT NULL DEFAULT now(),
+  error text,
+  response_url text,
+  CONSTRAINT site_health_status_pkey PRIMARY KEY (site_id),
+  CONSTRAINT site_health_status_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.site(id)
+);

@@ -1,0 +1,16 @@
+name: Health Check Cron
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call health cron
+        run: |
+          curl -fsS -m 20 \
+            -H "x-cron-secret: ${{ secrets.HEALTH_CRON_SECRET }}" \
+            "${{ secrets.HEALTH_CRON_URL }}"

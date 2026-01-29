@@ -50,6 +50,16 @@ type SupabaseExtensionLink = {
   sort_order: number | null;
 };
 
+type SupabaseHealth = {
+  site_id: string;
+  status: string;
+  http_status: number | null;
+  latency_ms: number | null;
+  checked_at: string | null;
+  error: string | null;
+  response_url: string | null;
+};
+
 type MaintainerEntry = {
   name: string;
   id: string;
@@ -115,7 +125,12 @@ async function loadSitesFromSupabase(options?: {
     return [];
   }
 
-  const [tagLinksResponse, maintainersResponse, extensionLinksResponse] =
+  const [
+    tagLinksResponse,
+    maintainersResponse,
+    extensionLinksResponse,
+    healthResponse,
+  ] =
     await Promise.all([
       supabaseAdmin
         .from("site_tags")
@@ -128,6 +143,10 @@ async function loadSitesFromSupabase(options?: {
       supabaseAdmin
         .from("site_extension_links")
         .select("site_id,label,url,sort_order")
+        .in("site_id", siteIds),
+      supabaseAdmin
+        .from("site_health_status")
+        .select("site_id,status,http_status,latency_ms,checked_at,error,response_url")
         .in("site_id", siteIds),
     ]);
 
@@ -144,11 +163,15 @@ async function loadSitesFromSupabase(options?: {
       `Supabase fetch failed: ${extensionLinksResponse.error.message}`
     );
   }
+  if (healthResponse.error) {
+    throw new Error(`Supabase fetch failed: ${healthResponse.error.message}`);
+  }
 
   const tagLinks = (tagLinksResponse.data ?? []) as SupabaseTagLink[];
   const maintainers = (maintainersResponse.data ?? []) as SupabaseMaintainer[];
   const extensionLinks = (extensionLinksResponse.data ??
     []) as SupabaseExtensionLink[];
+  const healthRows = (healthResponse.data ?? []) as SupabaseHealth[];
 
   const tagsBySite = new Map<string, string[]>();
   for (const link of tagLinks) {
@@ -191,6 +214,20 @@ async function loadSitesFromSupabase(options?: {
     });
   }
 
+  const healthBySite = new Map<string, Site["health"]>();
+  for (const row of healthRows) {
+    if (row.status === "up" || row.status === "slow" || row.status === "down") {
+      healthBySite.set(row.site_id, {
+        status: row.status,
+        httpStatus: row.http_status ?? undefined,
+        latencyMs: row.latency_ms ?? undefined,
+        checkedAt: row.checked_at ?? undefined,
+        error: row.error ?? undefined,
+        responseUrl: row.response_url ?? undefined,
+      });
+    }
+  }
+
   return sites.map((site) => ({
     id: site.id,
     name: site.name,
@@ -217,6 +254,7 @@ async function loadSitesFromSupabase(options?: {
     extensionLinks: extensionBySite.get(site.id) ?? [],
     isVisible: site.is_visible ?? true,
     updatedAt: site.updated_at || "",
+    health: healthBySite.get(site.id),
   }));
 }
 

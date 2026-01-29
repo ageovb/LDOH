@@ -119,6 +119,22 @@
 - site_logs_site_id_idx
 - site_logs_created_at_idx
 
+## 表：site_health_status
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| site_id | uuid | 站点 ID |
+| status | text | 状态（up/slow/down） |
+| http_status | integer | HTTP 状态码 |
+| latency_ms | integer | 延迟（毫秒） |
+| checked_at | timestamptz | 检查时间 |
+| error | text | 错误简述 |
+| response_url | text | 最终响应 URL |
+
+约束：
+- PRIMARY KEY(site_id)
+- FOREIGN KEY(site_id) REFERENCES site(id) ON DELETE CASCADE
+
 ## 表：auth_sessions
 
 | 字段 | 类型 | 可空 | 默认 | 说明 |

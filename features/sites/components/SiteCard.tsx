@@ -57,6 +57,74 @@ interface SiteCardProps {
   onToggleHidden: (id: string) => void;
 }
 
+type HealthViewStatus = "up" | "slow" | "down" | "unknown";
+
+const HEALTH_ERROR_LABELS: Record<string, string> = {
+  invalid_url: "URL 不合法",
+  invalid_protocol: "仅允许 HTTPS",
+  blocked_private_ip: "目标地址为内网",
+  blocked_localhost: "目标地址为本地",
+  dns_lookup_failed: "DNS 解析失败",
+  connect_timeout: "连接超时",
+  fetch_failed: "连接失败",
+  redirect_invalid: "重定向地址无效",
+  redirect_exceeded: "重定向次数过多",
+  redirect_to_insecure: "重定向到非 HTTPS",
+  redirect_to_private: "重定向到内网地址",
+};
+
+function formatHealthError(error?: string) {
+  if (!error) return "不可达";
+  return HEALTH_ERROR_LABELS[error] || error;
+}
+
+function formatHealthTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString("zh-CN", { hour12: false });
+}
+
+function getHealthStatus(health?: Site["health"]): HealthViewStatus {
+  if (!health?.checkedAt) return "unknown";
+  return health.status ?? "unknown";
+}
+
+function getHealthDotClass(status: HealthViewStatus) {
+  switch (status) {
+    case "up":
+      return "bg-green-500";
+    case "slow":
+      return "bg-yellow-500";
+    case "down":
+      return "bg-red-500";
+    default:
+      return "bg-gray-300";
+  }
+}
+
+function buildHealthTooltip(health?: Site["health"]) {
+  if (!health?.checkedAt) {
+    return "未检查";
+  }
+  const parts: string[] = [];
+  if (health.status === "down") {
+    parts.push(formatHealthError(health.error));
+  } else if (health.status === "slow" && health.httpStatus && health.httpStatus >= 500) {
+    parts.push(`HTTP ${health.httpStatus}`);
+  }
+  if (typeof health.latencyMs === "number") {
+    parts.push(`延迟 ${health.latencyMs}ms`);
+  }
+  const timeLabel = formatHealthTime(health.checkedAt);
+  if (timeLabel) {
+    parts.push(`更新时间 ${timeLabel}`);
+  }
+  return parts.join(" · ");
+}
+
 export function SiteCard({
   site,
   isFavorite,
@@ -68,6 +136,9 @@ export function SiteCard({
   onToggleFavorite,
   onToggleHidden,
 }: SiteCardProps) {
+  const healthStatus = getHealthStatus(site.health);
+  const healthDotClass = getHealthDotClass(healthStatus);
+  const healthTooltip = buildHealthTooltip(site.health);
   const [copied, setCopied] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [maintainerMenuOpen, setMaintainerMenuOpen] = useState(false);
@@ -356,20 +427,33 @@ export function SiteCard({
 
             {/* 站点信息 */}
             <div className="flex-1 min-w-0 flex items-center gap-2">
-              <h3 className="truncate text-sm font-semibold text-brand-text">
-                {site.apiBaseUrl ? (
-                  <a
-                    href={site.apiBaseUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-brand-blue"
-                  >
-                    {site.name}
-                  </a>
-                ) : (
-                  site.name
-                )}
-              </h3>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${healthDotClass}`}
+                      aria-label="健康状态"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{healthTooltip}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="min-w-0 flex items-center gap-1">
+                <h3 className="truncate text-sm font-semibold text-brand-text">
+                  {site.apiBaseUrl ? (
+                    <a
+                      href={site.apiBaseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-brand-blue"
+                    >
+                      {site.name}
+                    </a>
+                  ) : (
+                    site.name
+                  )}
+                </h3>
+              </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <TooltipProvider delayDuration={0}>
@@ -830,20 +914,22 @@ export function SiteCard({
               {/* Title & Meta */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 min-w-0">
-                  <h3 className="min-w-0 truncate text-base font-semibold tracking-tight text-brand-text">
-                    {site.apiBaseUrl ? (
-                      <a
-                        href={site.apiBaseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-brand-blue"
-                      >
-                        {site.name}
-                      </a>
-                    ) : (
-                      site.name
-                    )}
-                  </h3>
+                  <div className="min-w-0 flex items-center gap-1">
+                    <h3 className="min-w-0 truncate text-base font-semibold tracking-tight text-brand-text">
+                      {site.apiBaseUrl ? (
+                        <a
+                          href={site.apiBaseUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-brand-blue"
+                        >
+                          {site.name}
+                        </a>
+                      ) : (
+                        site.name
+                      )}
+                    </h3>
+                  </div>
                 </div>
                 <div className="mt-0.5 flex items-center gap-2">
                   <TooltipProvider delayDuration={0}>
@@ -1010,6 +1096,17 @@ export function SiteCard({
             >
               <div className="rounded-lg border border-brand-border bg-gray-50/50 px-3 py-2.5 text-[11px] font-mono text-brand-muted transition-colors group-hover/url:border-brand-blue/20 group-hover/url:bg-white">
                 <div className="flex items-center gap-2">
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${healthDotClass}`}
+                          aria-label="健康状态"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>{healthTooltip}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <span className="flex-1 truncate">{site.apiBaseUrl}</span>
                   {copied ? (
                     <Check className="h-3 w-3 shrink-0 text-brand-green" />

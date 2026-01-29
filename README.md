@@ -10,6 +10,7 @@ LDOH（Linux Do Open Hub）是一个开发信息导航平台。
 - 站点新增 / 编辑（LD OAuth，LV2 及以上）
 - 站长可隐藏自己的站点（仅本人可见）
 - 根据等级显示站点
+- 站点健康检查（HTTPS 基础连通性）
 - 更新日志
 
 ## 技术栈
@@ -51,14 +52,19 @@ SESSION_SECRET=
 
 ```
 ENV=dev                           # dev 模式，跳过 OAuth，返回 mock 用户
-LD_DEV_USERNAME=dev               # dev 模式 mock 用户名
-LD_DEV_TRUST_LEVEL=2              # dev 模式 mock trust_level
-LD_DEV_USER_ID=0                  # dev 模式 mock user_id（>0 才写入 created_by）
+LD_DEV_USERNAME=                  # dev 模式 mock 用户名（ENV=dev 必填）
+LD_DEV_TRUST_LEVEL=               # dev 模式 mock trust_level（ENV=dev 必填）
+LD_DEV_USER_ID=                   # dev 模式 mock user_id（ENV=dev 必填，>0 才写入 created_by）
 LD_OAUTH_AUTHORIZATION_ENDPOINT=  # 默认 https://connect.linux.do/oauth2/authorize
 LD_OAUTH_TOKEN_ENDPOINT=          # 默认 https://connect.linux.do/oauth2/token
 LD_OAUTH_USER_ENDPOINT=           # 默认 https://connect.linux.do/api/user
 LD_OAUTH_REFRESH_BUFFER_SECONDS=120
 LD_OAUTH_TOKEN_COOKIE_MAX_AGE=2592000 # 会话有效期（秒），默认 30 天
+HEALTH_CRON_SECRET=                   # 健康检查 cron 密钥（必填，建议强随机）
+HEALTH_CHECK_TIMEOUT_MS=5000          # 健康检查超时（毫秒）
+HEALTH_CHECK_SLOW_MS=3000             # 健康检查高延迟阈值（毫秒）
+HEALTH_CHECK_INTERVAL_MINUTES=60      # 健康检查间隔（分钟）
+HEALTH_CHECK_CONCURRENCY=10           # 健康检查并发数
 NEXT_PUBLIC_SWR_FOCUS_THROTTLE_INTERVAL=300000 # SWR 聚焦刷新节流（ms）
 NEXT_PUBLIC_SWR_REFRESH_INTERVAL=1800000       # SWR 自动刷新间隔（ms）
 NEXT_PUBLIC_REPO_URL=                          # 导航栏 GitHub 按钮链接
@@ -90,6 +96,7 @@ lib/contracts/           # 类型定义
 - `GET /api/sites/[id]/logs`：站点操作日志
 - `GET /api/notifications`：系统通知（有效期内、已启用）
 - `GET /api/ld/user`：当前用户信息（用于权限判断）
+- `GET /api/health/cron`：站点健康检查（cron 调用，需 `x-cron-secret`）
 
 ## 标签策略
 
@@ -113,3 +120,19 @@ lib/contracts/           # 类型定义
 - 输入 LinuxDo 个人主页链接：`https://linux.do/u/xxx/summary`
 - 自动解析 `xxx` 作为显示名（若为空）与站长识别依据
 - profile_url 为空则不显示
+
+## 站点健康检查
+
+- 仅检查 `apiBaseUrl` 的 HTTPS 连通性，不请求业务接口
+- 401/403 视为正常响应
+- 红色表示不可达（DNS/TCP/TLS/超时/私网/非 HTTPS 等）
+- 黄色表示高延迟（>= 3000ms）或 HTTP 5xx
+- 绿色表示正常
+- 灰色表示尚未检查
+
+### GitHub Actions 定时触发
+
+使用 `.github/workflows/health-cron.yml` 触发定时检查，需要在仓库 Secrets 配置：
+
+- `HEALTH_CRON_SECRET`：与环境变量一致的密钥
+- `HEALTH_CRON_URL`：例如 `https://your-domain.com/api/health/cron`

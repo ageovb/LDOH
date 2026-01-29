@@ -28,6 +28,17 @@ export interface ExtensionLink {
   url: string;
 }
 
+export type SiteHealthStatus = "up" | "slow" | "down";
+
+export interface SiteHealth {
+  status: SiteHealthStatus;
+  httpStatus?: number;
+  latencyMs?: number;
+  checkedAt?: string;
+  error?: string;
+  responseUrl?: string;
+}
+
 /**
  * 公益站点完整信息
  */
@@ -72,4 +83,6 @@ export interface Site {
   isVisible?: boolean;
   /** 更新时间 (可选) */
   updatedAt?: string;
+  /** 健康检查状态 (可选) */
+  health?: SiteHealth;
 }
