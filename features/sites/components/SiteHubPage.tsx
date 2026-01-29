@@ -194,6 +194,7 @@ export function SiteHubPage({
     if (editorMode === "edit" && editingSite) {
       if (!isSiteMaintainer(editingSite)) {
         delete (nextPayload as { isVisible?: boolean }).isVisible;
+        delete (nextPayload as { description?: string }).description;
       }
     }
     const response = await fetch(
@@ -215,8 +216,6 @@ export function SiteHubPage({
         throw new Error("未登录，请先登录");
       }
       if (response.status === 403) {
-        const data = await response.json().catch(() => ({}));
-
         // 使用错误码判断，而非字符串匹配
         switch (data.code) {
           case API_ERROR_CODES.DESCRIPTION_PERMISSION_DENIED:

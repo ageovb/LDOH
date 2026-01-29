@@ -194,6 +194,15 @@ export async function PATCH(
         ? true
         : maintainerIds.some((id) => id.toLowerCase() === username.toLowerCase());
 
+    const currentSite = siteResponse.data;
+    const normalizedCurrentDescription = normalizeString(
+      currentSite.description || ""
+    );
+    const normalizedNextDescription =
+      payload.description === undefined
+        ? normalizedCurrentDescription
+        : normalizeString(payload.description);
+
     if (payload.isVisible !== undefined && !isMaintainer) {
       return NextResponse.json<ApiErrorResponse>(
         {
@@ -205,7 +214,11 @@ export async function PATCH(
     }
 
     // 新增：检查站点描述修改权限
-    if (payload.description !== undefined && !isMaintainer) {
+    if (
+      payload.description !== undefined &&
+      !isMaintainer &&
+      normalizedNextDescription !== normalizedCurrentDescription
+    ) {
       return NextResponse.json<ApiErrorResponse>(
         {
           error: "仅站长可以修改站点描述",
@@ -214,8 +227,6 @@ export async function PATCH(
         { status: 403 }
       );
     }
-
-    const currentSite = siteResponse.data;
 
     // 乐观锁检查
     if (payload.updatedAt) {
@@ -269,8 +280,8 @@ export async function PATCH(
     pushChange("名称", currentSite.name, payload.name.trim());
     pushChange(
       "描述",
-      normalizeString(currentSite.description || ""),
-      normalizeString(payload.description)
+      normalizedCurrentDescription,
+      normalizedNextDescription
     );
     pushChange(
       "登记等级",
@@ -344,7 +355,10 @@ export async function PATCH(
       .from("site")
       .update({
         name: payload.name.trim(),
-        description: normalizeString(payload.description) || null,
+        description:
+          payload.description === undefined
+            ? currentSite.description
+            : normalizeString(payload.description) || null,
         registration_limit: Number(payload.registrationLimit) || 0,
         api_base_url: normalizedApiBaseUrl ?? payload.apiBaseUrl?.trim(),
         supports_immersive_translation: Boolean(
