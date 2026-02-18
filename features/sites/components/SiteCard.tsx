@@ -230,10 +230,12 @@ export function SiteCard({
 
   const tagContainerRef = useRef<HTMLDivElement | null>(null);
   const tagMeasureRef = useRef<HTMLDivElement | null>(null);
+  const descriptionRef = useRef<HTMLParagraphElement | null>(null);
   const tagLabels = useMemo(() => {
     return Array.from(new Set(site.tags));
   }, [site.tags]);
   const [visibleTagCount, setVisibleTagCount] = useState(tagLabels.length);
+  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false);
   const descriptionText =
     site.description?.trim() || "暂无描述，站长大大快来添加吧～";
 
@@ -287,6 +289,24 @@ export function SiteCard({
   useEffect(() => {
     setVisibleTagCount(tagLabels.length);
   }, [tagLabels.length]);
+
+  useLayoutEffect(() => {
+    const descriptionElement = descriptionRef.current;
+    if (!descriptionElement) return;
+
+    const computeIsTruncated = () => {
+      const isTruncated =
+        descriptionElement.scrollHeight > descriptionElement.clientHeight ||
+        descriptionElement.scrollWidth > descriptionElement.clientWidth;
+      setIsDescriptionTruncated(isTruncated);
+    };
+
+    computeIsTruncated();
+
+    const resizeObserver = new ResizeObserver(computeIsTruncated);
+    resizeObserver.observe(descriptionElement);
+    return () => resizeObserver.disconnect();
+  }, [descriptionText]);
 
   const visibleTagLabels = tagLabels.slice(0, visibleTagCount);
   const hiddenTagCount = Math.max(0, tagLabels.length - visibleTagCount);
@@ -1095,15 +1115,29 @@ export function SiteCard({
                 </Badge>
               </div>
             </div>
-            <p
-              className={`h-8 line-clamp-2 text-xs leading-4 ${
-                site.description?.trim()
-                  ? "text-brand-muted/80"
-                  : "italic text-brand-muted/50"
-              }`}
-            >
-              {descriptionText}
-            </p>
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p
+                    ref={descriptionRef}
+                    className={`h-8 line-clamp-2 text-xs leading-4 ${
+                      isDescriptionTruncated ? "cursor-help" : ""
+                    } ${
+                      site.description?.trim()
+                        ? "text-brand-muted/80"
+                        : "italic text-brand-muted/50"
+                    }`}
+                  >
+                    {descriptionText}
+                  </p>
+                </TooltipTrigger>
+                {site.description?.trim() && isDescriptionTruncated && (
+                  <TooltipContent className="max-w-sm">
+                    {descriptionText}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* API Endpoint */}
