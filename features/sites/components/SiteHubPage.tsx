@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Site } from "@/lib/contracts/types/site";
@@ -91,10 +91,25 @@ export function SiteHubPage({
   // Report Dialog State
   const [reportOpen, setReportOpen] = useState(false);
   const [reportingSite, setReportingSite] = useState<Site | null>(null);
+  const allowUrlToStateSyncRef = useRef(true);
+  const hasInitializedFromUrlRef = useRef(false);
 
   useEffect(() => {
+    const handlePopState = () => {
+      allowUrlToStateSyncRef.current = true;
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!allowUrlToStateSyncRef.current && hasInitializedFromUrlRef.current) {
+      return;
+    }
     const queryFromUrl = searchParams.get("q") ?? "";
     setSearchQuery((prev) => (prev === queryFromUrl ? prev : queryFromUrl));
+    allowUrlToStateSyncRef.current = false;
+    hasInitializedFromUrlRef.current = true;
   }, [searchParams]);
 
   useEffect(() => {
@@ -113,6 +128,7 @@ export function SiteHubPage({
       }
 
       const nextUrl = nextSearch ? `${pathname}?${nextSearch}` : pathname;
+      allowUrlToStateSyncRef.current = false;
       router.replace(nextUrl, { scroll: false });
     }, 300);
 
