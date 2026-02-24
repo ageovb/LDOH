@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { X, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import useSWR from "swr";
+import { usePathname } from "next/navigation";
 
 interface Notification {
   id: string;
@@ -17,13 +18,15 @@ interface Notification {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function NotificationBanner() {
+  const pathname = usePathname();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const isAdminRoute = pathname?.startsWith("/admin");
 
   // 1. User Auth Check (Simple fetch, no SWR needed for one-time check, or useSWRImmutable)
-  const { data: userData } = useSWR("/api/ld/user", fetcher, {
+  const { data: userData } = useSWR(isAdminRoute ? null : "/api/ld/user", fetcher, {
     revalidateOnFocus: false,
     shouldRetryOnError: false,
   });
@@ -32,7 +35,7 @@ export function NotificationBanner() {
 
   // 2. Notifications Fetch (SWR) - Only fetch if logged in
   const { data: notifData } = useSWR(
-    isLoggedIn ? "/api/notifications" : null,
+    isLoggedIn && !isAdminRoute ? "/api/notifications" : null,
     fetcher,
     {
       revalidateOnFocus: true,
@@ -70,7 +73,9 @@ export function NotificationBanner() {
     setCurrentIndex((prev) => (prev + 1) % notifications.length);
   }, [notifications.length]);
 
-  if (!mounted || !isLoggedIn || !isVisible || notifications.length === 0) return null;
+  if (isAdminRoute || !mounted || !isLoggedIn || !isVisible || notifications.length === 0) {
+    return null;
+  }
 
   // Safe guard for index if notifications change
   const safeIndex = currentIndex >= notifications.length ? 0 : currentIndex;
