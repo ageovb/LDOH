@@ -21,6 +21,8 @@ type SiteRow = {
   api_base_url: string;
   is_only_maintainer_visible: boolean | null;
   is_active: boolean | null;
+  is_runaway: boolean | null;
+  is_fake_charity: boolean | null;
   deleted_at: string | null;
   updated_at: string | null;
   registration_limit: number | null;

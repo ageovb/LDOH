@@ -81,6 +81,10 @@ export interface Site {
   extensionLinks?: ExtensionLink[];
   /** 是否展示在站点列表 */
   isVisible?: boolean;
+  /** 是否跑路（关站） */
+  isRunaway?: boolean;
+  /** 是否伪公益站点 */
+  isFakeCharity?: boolean;
   /** 更新时间 (可选) */
   updatedAt?: string;
   /** 健康检查状态 (可选) */

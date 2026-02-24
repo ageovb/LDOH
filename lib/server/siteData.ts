@@ -27,6 +27,8 @@ type SupabaseSite = {
   rate_limit: string | null;
   status_url: string | null;
   is_only_maintainer_visible: boolean | null;
+  is_runaway: boolean | null;
+  is_fake_charity: boolean | null;
   updated_at: string | null;
 };
 
@@ -106,7 +108,6 @@ async function loadSitesFromSupabase(options?: {
     siteQuery = siteQuery.eq("is_only_maintainer_visible", true);
   }
   siteQuery = siteQuery.eq("is_active", true);
-  siteQuery = siteQuery.is("deleted_at", null);
   if (
     typeof options?.maxRegistrationLimit === "number" &&
     Number.isFinite(options.maxRegistrationLimit)
@@ -254,6 +255,8 @@ async function loadSitesFromSupabase(options?: {
     statusUrl: site.status_url || "",
     extensionLinks: extensionBySite.get(site.id) ?? [],
     isVisible: site.is_only_maintainer_visible ?? true,
+    isRunaway: Boolean(site.is_runaway),
+    isFakeCharity: Boolean(site.is_fake_charity),
     updatedAt: site.updated_at || "",
     health: healthBySite.get(site.id),
   }));
