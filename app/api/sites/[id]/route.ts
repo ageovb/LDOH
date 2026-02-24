@@ -141,7 +141,7 @@ export async function PATCH(
         supabaseAdmin
           .from("site")
           .select(
-            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,supports_nsfw,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_visible,updated_at"
+            "name,description,registration_limit,api_base_url,supports_immersive_translation,supports_ldc,supports_checkin,supports_nsfw,checkin_url,checkin_note,benefit_url,rate_limit,status_url,is_only_maintainer_visible,updated_at"
           )
           .eq("id", siteId)
           .single(),
@@ -339,7 +339,7 @@ export async function PATCH(
       normalizeString(payload.statusUrl)
     );
     if (payload.isVisible !== undefined) {
-      pushChange("展示", Boolean(currentSite.is_visible), Boolean(payload.isVisible));
+      pushChange("展示", Boolean(currentSite.is_only_maintainer_visible), Boolean(payload.isVisible));
     }
     if (currentTags.join("|") !== nextTags.join("|")) {
       changes.push(`标签: ${formatList(currentTags)} -> ${formatList(nextTags)}`);
@@ -376,7 +376,7 @@ export async function PATCH(
         benefit_url: normalizeString(payload.benefitUrl) || null,
         rate_limit: normalizeString(payload.rateLimit) || null,
         status_url: normalizeString(payload.statusUrl) || null,
-        is_visible:
+        is_only_maintainer_visible:
           payload.isVisible === undefined
             ? undefined
             : Boolean(payload.isVisible),

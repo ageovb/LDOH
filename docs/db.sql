@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.site (
   benefit_url text,
   status_url text,
   is_active boolean NOT NULL DEFAULT true,
-  is_visible boolean NOT NULL DEFAULT true,
+  is_only_maintainer_visible boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   created_by bigint,
@@ -174,7 +174,7 @@ COMMENT ON COLUMN public.site.checkin_note IS '签到说明';
 COMMENT ON COLUMN public.site.benefit_url IS '福利地址';
 COMMENT ON COLUMN public.site.status_url IS '状态页地址';
 COMMENT ON COLUMN public.site.is_active IS '是否启用';
-COMMENT ON COLUMN public.site.is_visible IS '是否前台可见';
+COMMENT ON COLUMN public.site.is_only_maintainer_visible IS '是否前台仅站长可见';
 COMMENT ON COLUMN public.site.created_at IS '创建时间';
 COMMENT ON COLUMN public.site.updated_at IS '更新时间';
 COMMENT ON COLUMN public.site.created_by IS '创建人用户ID';
@@ -292,7 +292,30 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_site_reports_unique_pending ON public.site
 CREATE INDEX IF NOT EXISTS idx_site_reports_site_id ON public.site_reports(site_id);
 CREATE INDEX IF NOT EXISTS idx_site_reports_status ON public.site_reports(status) WHERE status = 'pending';
 
-CREATE OR REPLACE FUNCTION public.create_site_with_notification(
+DROP FUNCTION IF EXISTS public.create_site_with_notification(
+  text,
+  text,
+  integer,
+  text,
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  text,
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  bigint,
+  text,
+  bigint,
+  text[],
+  jsonb,
+  jsonb
+);
+
+CREATE FUNCTION public.create_site_with_notification(
   p_name text,
   p_description text,
   p_registration_limit integer,
@@ -306,7 +329,7 @@ CREATE OR REPLACE FUNCTION public.create_site_with_notification(
   p_benefit_url text,
   p_rate_limit text,
   p_status_url text,
-  p_is_visible boolean,
+  p_is_only_maintainer_visible boolean,
   p_actor_id bigint,
   p_actor_username text,
   p_created_by bigint,
@@ -334,7 +357,7 @@ BEGIN
     benefit_url,
     rate_limit,
     status_url,
-    is_visible,
+    is_only_maintainer_visible,
     created_by,
     updated_by
   ) VALUES (
@@ -351,7 +374,7 @@ BEGIN
     p_benefit_url,
     p_rate_limit,
     p_status_url,
-    COALESCE(p_is_visible, true),
+    COALESCE(p_is_only_maintainer_visible, true),
     p_created_by,
     p_created_by
   )

@@ -23,7 +23,7 @@
 | benefit_url                    | text        | 是   | -                 | 福利地址           |
 | status_url                     | text        | 是   | -                 | 状态页地址         |
 | is_active                      | boolean     | 否   | true              | 是否启用           |
-| is_visible                     | boolean     | 否   | true              | 是否前台可见       |
+| is_only_maintainer_visible                     | boolean     | 否   | true              | 是否前台仅站长可见       |
 | created_at                     | timestamptz | 否   | now()             | 创建时间           |
 | updated_at                     | timestamptz | 否   | now()             | 更新时间           |
 | created_by                     | bigint      | 是   | -                 | 创建人用户ID       |

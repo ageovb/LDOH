@@ -6,7 +6,7 @@ export async function GET() {
     const [sitesRes, healthRes, sessionsRes] = await Promise.all([
       supabaseAdmin
         .from("site")
-        .select("id,is_visible,is_active,deleted_at"),
+        .select("id,is_only_maintainer_visible,is_active,deleted_at"),
       supabaseAdmin
         .from("site_health_status")
         .select("site_id,status"),
@@ -22,7 +22,7 @@ export async function GET() {
 
     const sites = sitesRes.data ?? [];
     const active = sites.filter((s) => s.is_active && !s.deleted_at);
-    const hidden = active.filter((s) => !s.is_visible);
+    const hidden = active.filter((s) => !s.is_only_maintainer_visible);
     const deleted = sites.filter((s) => s.deleted_at);
 
     const healthMap: Record<string, number> = { up: 0, slow: 0, down: 0 };

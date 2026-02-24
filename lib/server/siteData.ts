@@ -26,7 +26,7 @@ type SupabaseSite = {
   benefit_url: string | null;
   rate_limit: string | null;
   status_url: string | null;
-  is_visible: boolean | null;
+  is_only_maintainer_visible: boolean | null;
   updated_at: string | null;
 };
 
@@ -100,10 +100,10 @@ async function loadSitesFromSupabase(options?: {
     // no filter on visibility
   } else if (options?.includeIds && options.includeIds.length > 0) {
     siteQuery = siteQuery.or(
-      `is_visible.eq.true,id.in.(${options.includeIds.join(",")})`
+      `is_only_maintainer_visible.eq.true,id.in.(${options.includeIds.join(",")})`
     );
   } else {
-    siteQuery = siteQuery.eq("is_visible", true);
+    siteQuery = siteQuery.eq("is_only_maintainer_visible", true);
   }
   siteQuery = siteQuery.eq("is_active", true);
   siteQuery = siteQuery.is("deleted_at", null);
@@ -253,7 +253,7 @@ async function loadSitesFromSupabase(options?: {
     rateLimit: site.rate_limit || "",
     statusUrl: site.status_url || "",
     extensionLinks: extensionBySite.get(site.id) ?? [],
-    isVisible: site.is_visible ?? true,
+    isVisible: site.is_only_maintainer_visible ?? true,
     updatedAt: site.updated_at || "",
     health: healthBySite.get(site.id),
   }));

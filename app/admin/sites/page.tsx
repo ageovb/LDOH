@@ -19,7 +19,7 @@ type SiteRow = {
   name: string;
   description: string | null;
   api_base_url: string;
-  is_visible: boolean | null;
+  is_only_maintainer_visible: boolean | null;
   is_active: boolean | null;
   deleted_at: string | null;
   updated_at: string | null;
