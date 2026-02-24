@@ -23,13 +23,13 @@
 | benefit_url                    | text        | 是   | -                 | 福利地址           |
 | status_url                     | text        | 是   | -                 | 状态页地址         |
 | is_active                      | boolean     | 否   | true              | 是否启用           |
-| is_only_maintainer_visible                     | boolean     | 否   | true              | 是否前台仅站长可见       |
+| is_runaway                     | boolean     | 否   | false             | 是否跑路（关站）   |
+| is_fake_charity                | boolean     | 否   | false             | 是否伪公益站点     |
+| is_only_maintainer_visible     | boolean     | 否   | true              | 是否前台仅站长可见 |
 | created_at                     | timestamptz | 否   | now()             | 创建时间           |
 | updated_at                     | timestamptz | 否   | now()             | 更新时间           |
 | created_by                     | bigint      | 是   | -                 | 创建人用户ID       |
 | updated_by                     | bigint      | 是   | -                 | 更新人用户ID       |
-| deleted_at                     | timestamptz | 是   | -                 | 逻辑删除时间       |
-| deleted_by                     | integer     | 是   | -                 | 逻辑删除操作人ID   |
 
 ### indexes
 
@@ -37,7 +37,6 @@
 | --------------------- | ------------ | ------------- | ------------------ |
 | site_pkey             | id           | PRIMARY KEY   | 主键索引           |
 | site_api_base_url_key | api_base_url | UNIQUE        | API地址唯一索引    |
-| idx_site_deleted_at   | deleted_at   | PARTIAL INDEX | 未删除站点查询索引 |
 
 ### constraints
 
@@ -285,34 +284,36 @@
 
 ### fields
 
-| 字段              | 类型        | 可空 | 默认值            | 字段描述     |
-| ----------------- | ----------- | ---- | ----------------- | ------------ |
-| id                | uuid        | 否   | gen_random_uuid() | 举报记录主键 |
-| site_id           | uuid        | 否   | -                 | 被举报站点ID |
-| reporter_id       | integer     | 否   | -                 | 举报人用户ID |
-| reporter_username | text        | 否   | ''                | 举报人用户名 |
-| reason            | text        | 否   | ''                | 举报原因     |
-| status            | text        | 否   | pending           | 举报状态     |
-| created_at        | timestamptz | 否   | now()             | 创建时间     |
-| reviewed_at       | timestamptz | 是   | -                 | 审核时间     |
-| reviewed_by       | integer     | 是   | -                 | 审核人用户ID |
+| 字段              | 类型        | 可空 | 默认值            | 字段描述                         |
+| ----------------- | ----------- | ---- | ----------------- | -------------------------------- |
+| id                | uuid        | 否   | gen_random_uuid() | 报告记录主键                     |
+| site_id           | uuid        | 否   | -                 | 被报告站点ID                     |
+| reporter_id       | integer     | 否   | -                 | 报告人用户ID                     |
+| reporter_username | text        | 否   | ''                | 报告人用户名                     |
+| report_type       | text        | 否   | fake_charity      | 报告类型（runaway/fake_charity） |
+| reason            | text        | 否   | ''                | 报告原因                         |
+| status            | text        | 否   | pending           | 报告状态                         |
+| created_at        | timestamptz | 否   | now()             | 创建时间                         |
+| reviewed_at       | timestamptz | 是   | -                 | 审核时间                         |
+| reviewed_by       | integer     | 是   | -                 | 审核人用户ID                     |
 
 ### indexes
 
-| 索引名                          | 字段                | 类型           | 说明                     |
-| ------------------------------- | ------------------- | -------------- | ------------------------ |
-| site_reports_pkey               | id                  | PRIMARY KEY    | 主键索引                 |
-| idx_site_reports_unique_pending | site_id,reporter_id | PARTIAL UNIQUE | 同站点同用户仅1条pending |
-| idx_site_reports_site_id        | site_id             | BTREE          | 站点维度查询索引         |
-| idx_site_reports_status         | status              | PARTIAL INDEX  | pending状态查询索引      |
+| 索引名                          | 字段                            | 类型           | 说明                           |
+| ------------------------------- | ------------------------------- | -------------- | ------------------------------ |
+| site_reports_pkey               | id                              | PRIMARY KEY    | 主键索引                       |
+| idx_site_reports_unique_pending | site_id,reporter_id,report_type | PARTIAL UNIQUE | 同站点同用户同类型仅1条pending |
+| idx_site_reports_site_id        | site_id                         | BTREE          | 站点维度查询索引               |
+| idx_site_reports_status         | status                          | PARTIAL INDEX  | pending状态查询索引            |
 
 ### constraints
 
-| 约束名                    | 字段    | 类型        | 说明                              |
-| ------------------------- | ------- | ----------- | --------------------------------- |
-| site_reports_pkey         | id      | PRIMARY KEY | 主键约束                          |
-| site_reports_site_id_fkey | site_id | FOREIGN KEY | 关联 site(id) 并级联删除          |
-| site_reports_status_check | status  | CHECK       | 仅允许 pending/reviewed/dismissed |
+| 约束名                         | 字段        | 类型        | 说明                              |
+| ------------------------------ | ----------- | ----------- | --------------------------------- |
+| site_reports_pkey              | id          | PRIMARY KEY | 主键约束                          |
+| site_reports_site_id_fkey      | site_id     | FOREIGN KEY | 关联 site(id) 并级联删除          |
+| site_reports_report_type_check | report_type | CHECK       | 仅允许 runaway/fake_charity       |
+| site_reports_status_check      | status      | CHECK       | 仅允许 pending/reviewed/dismissed |
 
 ## 表：system_settings
 

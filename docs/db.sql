@@ -18,13 +18,13 @@ CREATE TABLE IF NOT EXISTS public.site (
   benefit_url text,
   status_url text,
   is_active boolean NOT NULL DEFAULT true,
+  is_runaway boolean NOT NULL DEFAULT false,
+  is_fake_charity boolean NOT NULL DEFAULT false,
   is_only_maintainer_visible boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   created_by bigint,
-  updated_by bigint,
-  deleted_at timestamptz,
-  deleted_by integer
+  updated_by bigint
 );
 
 CREATE TABLE IF NOT EXISTS public.site_tags (
@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS public.site_reports (
   site_id uuid NOT NULL,
   reporter_id integer NOT NULL,
   reporter_username text NOT NULL DEFAULT '',
+  report_type text NOT NULL DEFAULT 'fake_charity',
   reason text NOT NULL DEFAULT '',
   status text NOT NULL DEFAULT 'pending',
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -141,6 +142,8 @@ CREATE TABLE IF NOT EXISTS public.site_reports (
   reviewed_by integer,
   CONSTRAINT site_reports_site_id_fkey
     FOREIGN KEY (site_id) REFERENCES public.site(id) ON DELETE CASCADE,
+  CONSTRAINT site_reports_report_type_check
+    CHECK (report_type IN ('runaway', 'fake_charity')),
   CONSTRAINT site_reports_status_check
     CHECK (status IN ('pending', 'reviewed', 'dismissed'))
 );
@@ -151,9 +154,35 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
 );
 
 ALTER TABLE public.site
-  ADD COLUMN IF NOT EXISTS deleted_at timestamptz,
-  ADD COLUMN IF NOT EXISTS deleted_by integer,
-  ADD COLUMN IF NOT EXISTS supports_nsfw boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS supports_nsfw boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_runaway boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS is_fake_charity boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.site_reports
+  ADD COLUMN IF NOT EXISTS report_type text;
+
+UPDATE public.site_reports
+SET report_type = 'fake_charity'
+WHERE report_type IS NULL;
+
+ALTER TABLE public.site_reports
+  ALTER COLUMN report_type SET DEFAULT 'fake_charity',
+  ALTER COLUMN report_type SET NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'site_reports_report_type_check'
+      AND conrelid = 'public.site_reports'::regclass
+  ) THEN
+    ALTER TABLE public.site_reports
+      ADD CONSTRAINT site_reports_report_type_check
+      CHECK (report_type IN ('runaway', 'fake_charity'));
+  END IF;
+END;
+$$;
 
 ALTER TABLE public.system_notifications
   ADD COLUMN IF NOT EXISTS min_trust_level integer;
@@ -174,13 +203,13 @@ COMMENT ON COLUMN public.site.checkin_note IS '签到说明';
 COMMENT ON COLUMN public.site.benefit_url IS '福利地址';
 COMMENT ON COLUMN public.site.status_url IS '状态页地址';
 COMMENT ON COLUMN public.site.is_active IS '是否启用';
+COMMENT ON COLUMN public.site.is_runaway IS '是否跑路（关站）';
+COMMENT ON COLUMN public.site.is_fake_charity IS '是否伪公益站点';
 COMMENT ON COLUMN public.site.is_only_maintainer_visible IS '是否前台仅站长可见';
 COMMENT ON COLUMN public.site.created_at IS '创建时间';
 COMMENT ON COLUMN public.site.updated_at IS '更新时间';
 COMMENT ON COLUMN public.site.created_by IS '创建人用户ID';
 COMMENT ON COLUMN public.site.updated_by IS '更新人用户ID';
-COMMENT ON COLUMN public.site.deleted_at IS '逻辑删除时间';
-COMMENT ON COLUMN public.site.deleted_by IS '逻辑删除操作人ID';
 
 COMMENT ON TABLE public.site_tags IS '站点标签关联表';
 COMMENT ON COLUMN public.site_tags.site_id IS '站点ID';
@@ -262,13 +291,14 @@ COMMENT ON COLUMN public.admin_users.user_id IS '管理员用户ID';
 COMMENT ON COLUMN public.admin_users.role IS '管理员角色';
 COMMENT ON COLUMN public.admin_users.created_at IS '创建时间';
 
-COMMENT ON TABLE public.site_reports IS '站点举报表';
-COMMENT ON COLUMN public.site_reports.id IS '举报记录主键';
-COMMENT ON COLUMN public.site_reports.site_id IS '被举报站点ID';
-COMMENT ON COLUMN public.site_reports.reporter_id IS '举报人用户ID';
-COMMENT ON COLUMN public.site_reports.reporter_username IS '举报人用户名';
-COMMENT ON COLUMN public.site_reports.reason IS '举报原因';
-COMMENT ON COLUMN public.site_reports.status IS '举报状态';
+COMMENT ON TABLE public.site_reports IS '站点报告表';
+COMMENT ON COLUMN public.site_reports.id IS '报告记录主键';
+COMMENT ON COLUMN public.site_reports.site_id IS '被报告站点ID';
+COMMENT ON COLUMN public.site_reports.reporter_id IS '报告人用户ID';
+COMMENT ON COLUMN public.site_reports.reporter_username IS '报告人用户名';
+COMMENT ON COLUMN public.site_reports.report_type IS '报告类型（runaway/fake_charity）';
+COMMENT ON COLUMN public.site_reports.reason IS '报告原因';
+COMMENT ON COLUMN public.site_reports.status IS '报告状态';
 COMMENT ON COLUMN public.site_reports.created_at IS '创建时间';
 COMMENT ON COLUMN public.site_reports.reviewed_at IS '审核时间';
 COMMENT ON COLUMN public.site_reports.reviewed_by IS '审核人用户ID';
@@ -287,8 +317,9 @@ CREATE INDEX IF NOT EXISTS auth_sessions_session_expires_at_idx ON public.auth_s
 CREATE INDEX IF NOT EXISTS system_notifications_valid_from_idx ON public.system_notifications(valid_from DESC);
 CREATE INDEX IF NOT EXISTS system_notifications_valid_until_idx ON public.system_notifications(valid_until);
 CREATE INDEX IF NOT EXISTS system_notifications_is_active_idx ON public.system_notifications(is_active);
-CREATE INDEX IF NOT EXISTS idx_site_deleted_at ON public.site(deleted_at) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS idx_site_reports_unique_pending ON public.site_reports(site_id, reporter_id) WHERE status = 'pending';
+DROP INDEX IF EXISTS public.idx_site_deleted_at;
+DROP INDEX IF EXISTS public.idx_site_reports_unique_pending;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_site_reports_unique_pending ON public.site_reports(site_id, reporter_id, report_type) WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_site_reports_site_id ON public.site_reports(site_id);
 CREATE INDEX IF NOT EXISTS idx_site_reports_status ON public.site_reports(status) WHERE status = 'pending';
 
