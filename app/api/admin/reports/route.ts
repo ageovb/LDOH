@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   let query = supabaseAdmin
     .from("site_reports")
     .select(
-      "id, site_id, reporter_id, reporter_username, reason, status, created_at, reviewed_at, reviewed_by, site:site_id(name)",
+      "id, site_id, reporter_id, reporter_username, report_type, reason, status, created_at, reviewed_at, reviewed_by, site:site_id(name)",
       { count: "exact" }
     )
     .order("created_at", { ascending: false })

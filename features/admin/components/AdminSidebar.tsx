@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
     icon: <ShieldCheck size={18} />,
     superOnly: true,
   },
-  { label: "举报管理", href: "/admin/reports", icon: <Flag size={18} /> },
+  { label: "报告管理", href: "/admin/reports", icon: <Flag size={18} /> },
   { label: "通知管理", href: "/admin/notifications", icon: <Bell size={18} /> },
   {
     label: "系统配置",

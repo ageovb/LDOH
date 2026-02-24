@@ -108,6 +108,8 @@ async function loadSitesFromSupabase(options?: {
     siteQuery = siteQuery.eq("is_only_maintainer_visible", true);
   }
   siteQuery = siteQuery.eq("is_active", true);
+  siteQuery = siteQuery.eq("is_runaway", false);
+  siteQuery = siteQuery.eq("is_fake_charity", false);
   if (
     typeof options?.maxRegistrationLimit === "number" &&
     Number.isFinite(options.maxRegistrationLimit)

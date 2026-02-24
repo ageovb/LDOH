@@ -19,10 +19,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  // 获取举报记录
+  // 获取报告记录
   const { data: report, error: fetchError } = await supabaseAdmin
     .from("site_reports")
-    .select("id, site_id, status")
+    .select("id, site_id, status, report_type")
     .eq("id", id)
     .maybeSingle();
 
@@ -33,7 +33,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  // 更新举报状态
+  // 更新报告状态
   const { error: updateError } = await supabaseAdmin
     .from("site_reports")
     .update({
@@ -47,18 +47,30 @@ export async function PATCH(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // 驳回时检查是否还有其他 pending 举报，若无则恢复站点可见
+  const updateField =
+    report.report_type === "runaway" ? "is_runaway" : "is_fake_charity";
+
+  // 处理通过后，保持对应标记为 true
+  if (newStatus === "reviewed") {
+    await supabaseAdmin
+      .from("site")
+      .update({ [updateField]: true })
+      .eq("id", report.site_id);
+  }
+
+  // 驳回时检查是否还有同类型 pending 报告，若无则恢复对应标记
   if (newStatus === "dismissed") {
     const { count, error: countError } = await supabaseAdmin
       .from("site_reports")
       .select("id", { count: "exact", head: true })
       .eq("site_id", report.site_id)
+      .eq("report_type", report.report_type)
       .eq("status", "pending");
 
     if (!countError && (count === null || count === 0)) {
       await supabaseAdmin
         .from("site")
-        .update({ is_active: true })
+        .update({ [updateField]: false })
         .eq("id", report.site_id);
     }
   }

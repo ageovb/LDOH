@@ -18,6 +18,7 @@ type ReportRow = {
   site_name: string;
   reporter_id: number;
   reporter_username: string;
+  report_type: "runaway" | "fake_charity";
   reason: string;
   status: string;
   created_at: string;
@@ -54,6 +55,17 @@ const STATUS_BADGE: Record<string, { className: string; label: string }> = {
   },
 };
 
+const TYPE_BADGE: Record<ReportRow["report_type"], { className: string; label: string }> = {
+  runaway: {
+    className: "bg-red-100 text-red-700",
+    label: "跑路",
+  },
+  fake_charity: {
+    className: "bg-amber-100 text-amber-700",
+    label: "伪公益",
+  },
+};
+
 export default function AdminReportsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
@@ -85,7 +97,7 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-neutral-900">举报管理</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">报告管理</h1>
 
       <div className="flex gap-1">
         {STATUS_TABS.map((tab) => (
@@ -108,9 +120,10 @@ export default function AdminReportsPage() {
           <thead>
             <tr className="border-b border-neutral-100 text-left text-xs text-neutral-500">
               <th className="px-4 py-3 font-medium">站点名称</th>
-              <th className="px-4 py-3 font-medium">举报人</th>
-              <th className="px-4 py-3 font-medium">举报原因</th>
-              <th className="px-4 py-3 font-medium">举报时间</th>
+              <th className="px-4 py-3 font-medium">报告人</th>
+              <th className="px-4 py-3 font-medium">类型</th>
+              <th className="px-4 py-3 font-medium">报告原因</th>
+              <th className="px-4 py-3 font-medium">报告时间</th>
               <th className="px-4 py-3 font-medium">状态</th>
               <th className="px-4 py-3 font-medium">操作</th>
             </tr>
@@ -119,7 +132,7 @@ export default function AdminReportsPage() {
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-8 text-center text-neutral-400"
                 >
                   加载中...
@@ -128,7 +141,7 @@ export default function AdminReportsPage() {
             ) : !data?.items?.length ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-4 py-8 text-center text-neutral-400"
                 >
                   暂无数据
@@ -137,6 +150,7 @@ export default function AdminReportsPage() {
             ) : (
               data.items.map((report) => {
                 const badge = STATUS_BADGE[report.status] ?? STATUS_BADGE.pending;
+                const typeBadge = TYPE_BADGE[report.report_type];
                 return (
                   <tr
                     key={report.id}
@@ -145,6 +159,13 @@ export default function AdminReportsPage() {
                     <td className="px-4 py-3">{report.site_name}</td>
                     <td className="px-4 py-3 text-neutral-500">
                       {report.reporter_username || `#${report.reporter_id}`}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${typeBadge.className}`}
+                      >
+                        {typeBadge.label}
+                      </span>
                     </td>
                     <td className="max-w-[300px] truncate px-4 py-3 text-neutral-500">
                       {report.reason}
@@ -166,14 +187,14 @@ export default function AdminReportsPage() {
                         <div className="flex gap-1">
                           <button
                             onClick={() => handleAction(report.id, "reviewed")}
-                            title="确认处理（站点保持隐藏）"
+                            title={`确认处理（保持${typeBadge.label}标记）`}
                             className="rounded p-1.5 text-green-600 hover:bg-green-50"
                           >
                             <CheckCircle size={15} />
                           </button>
                           <button
                             onClick={() => handleAction(report.id, "dismissed")}
-                            title="驳回（恢复站点可见）"
+                            title={`驳回（移除${typeBadge.label}标记）`}
                             className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100"
                           >
                             <XCircle size={15} />
