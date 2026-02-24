@@ -7,6 +7,7 @@ import {
   ChevronRight,
   CheckCircle,
   XCircle,
+  Loader2,
 } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -68,6 +69,7 @@ const TYPE_BADGE: Record<ReportRow["report_type"], { className: string; label: s
 export default function AdminReportsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const queryParams = new URLSearchParams();
   queryParams.set("page", String(page));
@@ -84,12 +86,22 @@ export default function AdminReportsPage() {
   }, []);
 
   const handleAction = async (reportId: string, action: "reviewed" | "dismissed") => {
-    await fetch(`/api/admin/reports/${reportId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: action }),
-    });
-    mutate();
+    const actionKey = `${reportId}:${action}`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/reports/${reportId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: action }),
+      });
+      if (!res.ok) {
+        alert("更新报告状态失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
@@ -150,6 +162,9 @@ export default function AdminReportsPage() {
               data.items.map((report) => {
                 const badge = STATUS_BADGE[report.status] ?? STATUS_BADGE.pending;
                 const typeBadge = TYPE_BADGE[report.report_type];
+                const rowPending = pendingAction?.startsWith(`${report.id}:`) ?? false;
+                const reviewedPending = pendingAction === `${report.id}:reviewed`;
+                const dismissedPending = pendingAction === `${report.id}:dismissed`;
                 return (
                   <tr
                     key={report.id}
@@ -186,17 +201,27 @@ export default function AdminReportsPage() {
                         <div className="flex gap-1">
                           <button
                             onClick={() => handleAction(report.id, "reviewed")}
+                            disabled={rowPending}
                             title={`确认处理（保持${typeBadge.label}标记）`}
-                            className="rounded p-1.5 text-green-600 hover:bg-green-50"
+                            className="rounded p-1.5 text-green-600 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <CheckCircle size={15} />
+                            {reviewedPending ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <CheckCircle size={15} />
+                            )}
                           </button>
                           <button
                             onClick={() => handleAction(report.id, "dismissed")}
+                            disabled={rowPending}
                             title={`驳回（移除${typeBadge.label}标记）`}
-                            className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100"
+                            className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <XCircle size={15} />
+                            {dismissedPending ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <XCircle size={15} />
+                            )}
                           </button>
                         </div>
                       ) : (

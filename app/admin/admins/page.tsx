@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Loader2 } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -22,6 +22,7 @@ export default function AdminAdminsPage() {
   const [newUserId, setNewUserId] = useState("");
   const [newRole, setNewRole] = useState("admin");
   const [adding, setAdding] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const addAdmin = async () => {
@@ -48,24 +49,41 @@ export default function AdminAdminsPage() {
 
   const removeAdmin = async (admin: AdminRow) => {
     if (!confirm(`确定要移除管理员 (user_id: ${admin.user_id}) 吗？`)) return;
-    const res = await fetch(`/api/admin/admins/${admin.id}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) {
-      const body = await res.json();
-      alert(body.error || "移除失败");
-    } else {
-      mutate();
+    const actionKey = `${admin.id}:remove`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/admins/${admin.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        alert(body.error || "移除失败");
+      } else {
+        mutate();
+      }
+    } finally {
+      setPendingAction(null);
     }
   };
 
   const changeRole = async (admin: AdminRow, role: string) => {
-    await fetch(`/api/admin/admins/${admin.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role }),
-    });
-    mutate();
+    const actionKey = `${admin.id}:role`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/admins/${admin.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        alert(body.error || "更新角色失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   return (
@@ -101,7 +119,11 @@ export default function AdminAdminsPage() {
           disabled={adding}
           className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
         >
-          <Plus size={15} />
+          {adding ? (
+            <Loader2 size={15} className="animate-spin" />
+          ) : (
+            <Plus size={15} />
+          )}
           添加
         </button>
         {error && <span className="text-sm text-red-500">{error}</span>}
@@ -137,20 +159,30 @@ export default function AdminAdminsPage() {
                 </td>
               </tr>
             ) : (
-              data.admins.map((admin) => (
+              data.admins.map((admin) => {
+                const rowPending = pendingAction?.startsWith(`${admin.id}:`) ?? false;
+                const rolePending = pendingAction === `${admin.id}:role`;
+                const removePending = pendingAction === `${admin.id}:remove`;
+                return (
                 <tr key={admin.id} className="border-b border-neutral-50">
                   <td className="px-4 py-3 text-neutral-700">
                     {admin.user_id}
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={admin.role}
-                      onChange={(e) => changeRole(admin, e.target.value)}
-                      className="rounded border border-neutral-200 px-2 py-1 text-xs outline-none"
-                    >
-                      <option value="admin">admin</option>
-                      <option value="super_admin">super_admin</option>
-                    </select>
+                    <div className="inline-flex items-center gap-2">
+                      <select
+                        value={admin.role}
+                        onChange={(e) => changeRole(admin, e.target.value)}
+                        disabled={rowPending}
+                        className="rounded border border-neutral-200 px-2 py-1 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <option value="admin">admin</option>
+                        <option value="super_admin">super_admin</option>
+                      </select>
+                      {rolePending && (
+                        <Loader2 size={13} className="animate-spin text-neutral-400" />
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-xs text-neutral-400">
                     {admin.created_at
@@ -160,14 +192,20 @@ export default function AdminAdminsPage() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => removeAdmin(admin)}
+                      disabled={rowPending}
                       title="移除"
-                      className="rounded p-1.5 text-red-500 hover:bg-red-50"
+                      className="rounded p-1.5 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Trash2 size={15} />
+                      {removePending ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={15} />
+                      )}
                     </button>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

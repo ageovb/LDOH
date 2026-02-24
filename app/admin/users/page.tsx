@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -25,6 +25,7 @@ type UsersResponse = {
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
+  const [pendingUserId, setPendingUserId] = useState<number | null>(null);
   const { data, isLoading, mutate } = useSWR<UsersResponse>(
     `/api/admin/users?page=${page}`,
     fetcher
@@ -32,8 +33,17 @@ export default function AdminUsersPage() {
 
   const forceLogout = async (userId: number, username: string | null) => {
     if (!confirm(`确定要强制下线用户「${username || userId}」吗？`)) return;
-    await fetch(`/api/admin/users/${userId}/sessions`, { method: "DELETE" });
-    mutate();
+    setPendingUserId(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/sessions`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("强制下线失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingUserId(null);
+    }
   };
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
@@ -88,10 +98,15 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => forceLogout(user.userId, user.username)}
+                      disabled={pendingUserId === user.userId}
                       title="强制下线"
-                      className="rounded p-1.5 text-red-500 hover:bg-red-50"
+                      className="rounded p-1.5 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <LogOut size={15} />
+                      {pendingUserId === user.userId ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <LogOut size={15} />
+                      )}
                     </button>
                   </td>
                 </tr>

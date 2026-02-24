@@ -6,6 +6,7 @@ import {
   Power,
   PowerOff,
   RotateCcw,
+  Loader2,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +38,7 @@ export default function AdminSitesPage() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const queryParams = new URLSearchParams();
   queryParams.set("page", String(page));
@@ -53,30 +55,60 @@ export default function AdminSitesPage() {
   }, [searchInput]);
 
   const toggleVisibility = async (site: SiteRow) => {
-    await fetch(`/api/admin/sites/${site.id}/visibility`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: !site.is_active }),
-    });
-    mutate();
+    const actionKey = `${site.id}:visibility`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/sites/${site.id}/visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !site.is_active }),
+      });
+      if (!res.ok) {
+        alert("更新站点状态失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const restoreRunaway = async (site: SiteRow) => {
-    await fetch(`/api/admin/sites/${site.id}/runaway`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_runaway: false }),
-    });
-    mutate();
+    const actionKey = `${site.id}:runaway`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/sites/${site.id}/runaway`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_runaway: false }),
+      });
+      if (!res.ok) {
+        alert("恢复跑路站点失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const restoreFakeCharity = async (site: SiteRow) => {
-    await fetch(`/api/admin/sites/${site.id}/fake-charity`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_fake_charity: false }),
-    });
-    mutate();
+    const actionKey = `${site.id}:fake_charity`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/sites/${site.id}/fake-charity`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_fake_charity: false }),
+      });
+      if (!res.ok) {
+        alert("恢复伪公益站点失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 0;
@@ -141,6 +173,10 @@ export default function AdminSitesPage() {
               </tr>
             ) : (
               data.sites.map((site) => {
+                const rowPending = pendingAction?.startsWith(`${site.id}:`) ?? false;
+                const visibilityPending = pendingAction === `${site.id}:visibility`;
+                const runawayPending = pendingAction === `${site.id}:runaway`;
+                const fakeCharityPending = pendingAction === `${site.id}:fake_charity`;
                 return (
                   <tr key={site.id} className="border-b border-neutral-50">
                     <td className="px-4 py-3">
@@ -184,10 +220,13 @@ export default function AdminSitesPage() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => toggleVisibility(site)}
+                          disabled={rowPending}
                           title={site.is_active ? "下线站点" : "上线站点"}
-                          className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100"
+                          className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {site.is_active ? (
+                          {visibilityPending ? (
+                            <Loader2 size={15} className="animate-spin" />
+                          ) : site.is_active ? (
                             <PowerOff size={15} />
                           ) : (
                             <Power size={15} />
@@ -196,19 +235,29 @@ export default function AdminSitesPage() {
                         {site.is_runaway && (
                           <button
                             onClick={() => restoreRunaway(site)}
+                            disabled={rowPending}
                             title="恢复跑路并上线"
-                            className="rounded p-1.5 text-red-600 hover:bg-red-50"
+                            className="rounded p-1.5 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <RotateCcw size={15} />
+                            {runawayPending ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <RotateCcw size={15} />
+                            )}
                           </button>
                         )}
                         {site.is_fake_charity && (
                           <button
                             onClick={() => restoreFakeCharity(site)}
+                            disabled={rowPending}
                             title="恢复伪公益并上线"
-                            className="rounded p-1.5 text-orange-600 hover:bg-orange-50"
+                            className="rounded p-1.5 text-orange-600 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <RotateCcw size={15} />
+                            {fakeCharityPending ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <RotateCcw size={15} />
+                            )}
                           </button>
                         )}
                       </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Trash2, Plus, Pencil, X, Check } from "lucide-react";
+import { Trash2, Plus, Pencil, X, Check, Loader2 } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -45,6 +45,7 @@ export default function AdminNotificationsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const openCreate = () => {
     setEditingId(null);
@@ -78,18 +79,22 @@ export default function AdminNotificationsPage() {
       is_active: form.is_active,
     };
 
-    if (editingId) {
-      await fetch(`/api/admin/notifications/${editingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-    } else {
-      await fetch("/api/admin/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    const res = editingId
+      ? await fetch(`/api/admin/notifications/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+      : await fetch("/api/admin/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+    if (!res.ok) {
+      setSaving(false);
+      setMessage(editingId ? "更新失败" : "创建失败");
+      return;
     }
 
     setSaving(false);
@@ -99,17 +104,37 @@ export default function AdminNotificationsPage() {
 
   const deleteNotif = async (id: string) => {
     if (!confirm("确定要删除该通知吗？")) return;
-    await fetch(`/api/admin/notifications/${id}`, { method: "DELETE" });
-    mutate();
+    const actionKey = `${id}:delete`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/notifications/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        alert("删除通知失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const toggleActive = async (n: NotifRow) => {
-    await fetch(`/api/admin/notifications/${n.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: !n.is_active }),
-    });
-    mutate();
+    const actionKey = `${n.id}:toggle`;
+    setPendingAction(actionKey);
+    try {
+      const res = await fetch(`/api/admin/notifications/${n.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !n.is_active }),
+      });
+      if (!res.ok) {
+        alert("更新通知状态失败");
+        return;
+      }
+      mutate();
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   return (
@@ -209,7 +234,11 @@ export default function AdminNotificationsPage() {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
             >
-              <Check size={15} />
+              {saving ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Check size={15} />
+              )}
               保存
             </button>
           </div>
@@ -241,19 +270,24 @@ export default function AdminNotificationsPage() {
                 </td>
               </tr>
             ) : (
-              data.notifications.map((n) => (
+              data.notifications.map((n) => {
+                const rowPending = pendingAction?.startsWith(`${n.id}:`) ?? false;
+                const togglePending = pendingAction === `${n.id}:toggle`;
+                const deletePending = pendingAction === `${n.id}:delete`;
+                return (
                 <tr key={n.id} className="border-b border-neutral-50">
                   <td className="px-4 py-3 text-neutral-700">{n.title}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleActive(n)}
+                      disabled={rowPending}
                       className={`rounded-full px-2 py-0.5 text-xs ${
                         n.is_active
                           ? "bg-green-100 text-green-700"
                           : "bg-neutral-100 text-neutral-500"
-                      }`}
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
                     >
-                      {n.is_active ? "启用" : "禁用"}
+                      {togglePending ? "处理中..." : n.is_active ? "启用" : "禁用"}
                     </button>
                   </td>
                   <td className="px-4 py-3 text-xs text-neutral-400">
@@ -270,22 +304,29 @@ export default function AdminNotificationsPage() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => openEdit(n)}
+                        disabled={rowPending}
                         title="编辑"
-                        className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100"
+                        className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Pencil size={15} />
                       </button>
                       <button
                         onClick={() => deleteNotif(n.id)}
+                        disabled={rowPending}
                         title="删除"
-                        className="rounded p-1.5 text-red-500 hover:bg-red-50"
+                        className="rounded p-1.5 text-red-500 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Trash2 size={15} />
+                        {deletePending ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={15} />
+                        )}
                       </button>
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
