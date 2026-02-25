@@ -1,3 +1,8 @@
+
+<p align="center">
+  <img src="public/logo.svg" alt="LDOH Logo" width="128" height="128" />
+</p>
+
 # LDOH
 
 LDOH（Linux Do Open Hub）是一个开发信息导航平台。

@@ -13,6 +13,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "LD OPEN HUB — 公益站导航",
   description: "公益站导航，由社区共建。",
+  icons: {
+    icon: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

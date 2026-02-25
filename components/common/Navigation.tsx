@@ -3,6 +3,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Github, Heart } from "lucide-react";
@@ -19,8 +20,14 @@ export function Navigation({ username }: NavigationProps) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-blue text-white font-bold">
-              L
+            <div className="relative h-8 w-8 overflow-hidden rounded-md">
+              <Image
+                src="/logo.svg"
+                alt="LD OPEN HUB Logo"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
             <span className="text-lg font-semibold tracking-tight">
               LD OPEN HUB
