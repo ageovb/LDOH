@@ -508,12 +508,12 @@ export function SiteCard({
                     <TooltipTrigger asChild>
                       <Badge
                         variant="secondary"
-                        className="px-1.5 py-0.5 text-[9px] font-semibold"
+                        className="max-w-[100px] px-1.5 py-0.5 text-[9px] font-semibold"
                       >
-                        {rateLimitLabel}
+                        <span className="min-w-0 truncate">{rateLimitLabel}</span>
                       </Badge>
                     </TooltipTrigger>
-                    <TooltipContent>速率限制</TooltipContent>
+                    <TooltipContent>速率限制: {rateLimitLabel}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
@@ -1018,12 +1018,12 @@ export function SiteCard({
                       <TooltipTrigger asChild>
                         <Badge
                           variant="secondary"
-                          className="px-1.5 py-0.5 text-[9px] font-semibold"
+                          className="max-w-[100px] px-1.5 py-0.5 text-[9px] font-semibold"
                         >
-                          {rateLimitLabel}
+                          <span className="min-w-0 truncate">{rateLimitLabel}</span>
                         </Badge>
                       </TooltipTrigger>
-                      <TooltipContent>速率限制</TooltipContent>
+                      <TooltipContent>速率限制: {rateLimitLabel}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
