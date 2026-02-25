@@ -6,6 +6,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Github, Heart } from "lucide-react";
 
 type NavigationProps = {
@@ -65,12 +71,62 @@ export function Navigation({ username }: NavigationProps) {
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {username && (
             <span className="rounded-full border border-brand-border bg-white px-3 py-1 text-xs font-medium text-brand-muted">
               Hi, {username}
             </span>
           )}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" asChild aria-label="ALL API Hub">
+                  <a
+                    href="https://linux.do/t/topic/1001042"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://github.com/qixing-jk/all-api-hub/raw/main/assets/icon.png"
+                      alt="ALL API Hub"
+                      className="h-4 w-4 rounded-sm object-contain"
+                    />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-64">
+                <p className="font-semibold">ALL API Hub</p>
+                <p className="text-xs text-muted-foreground mt-0.5">@qi_xing_jk</p>
+                <p className="text-xs text-muted-foreground mt-0.5">一站式管理此网站内的网站账号：余额/用量看板、自动签到、密钥一键导出到常用应用、网页内 API 可用性测试、渠道与模型同步/重定向</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" asChild aria-label="LDOH New API Helper">
+                  <a
+                    href="https://greasyfork.org/zh-CN/scripts/565844-ldoh-new-api-helper"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://www.tampermonkey.net/favicon.ico"
+                      alt="LDOH New API Helper"
+                      className="h-4 w-4 object-contain"
+                    />
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-64">
+                <p className="font-semibold">LDOH New API Helper</p>
+                <p className="text-xs text-muted-foreground mt-0.5">@LDOH</p>
+                <p className="text-xs text-muted-foreground mt-0.5">LDOH New API 专属小助手，支持余额查询、自动签到、密钥管理、模型查询</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button variant="ghost" size="icon" asChild aria-label="GitHub">
             <a
               href="https://github.com/JoJoJotarou/LDOH"
